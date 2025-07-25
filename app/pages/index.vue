@@ -2,7 +2,7 @@
   <UContainer>
     <!-- Switch en haut à droite -->
     <div class="flex justify-end">
-      <USwitch :model-value="isMounted ? isDark : false" color="primary" size="lg" unchecked-icon="i-lucide-sun"
+      <USwitch :model-value="isMounted ? isDark : false" color="neutral" size="lg" unchecked-icon="i-lucide-sun"
         checked-icon="i-lucide-moon" @update:model-value="val => { if (isMounted) isDark = val }" />
     </div>
 
