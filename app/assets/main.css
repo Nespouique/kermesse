@@ -1,0 +1,14 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+.kermesse-bg {
+  background: repeating-linear-gradient(225deg, #ffe4ec 0 10px, #e0f2ff 10px 20px);
+}
+
+html.dark .kermesse-bg {
+  background: repeating-linear-gradient(225deg, #2c1127 0 10px, #223655 10px 20px);
+}
+
+.bulle-bg-subtle {
+  background: var(--ui-bg);
+}
