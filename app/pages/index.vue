@@ -25,17 +25,34 @@
     <CountdownBlock class="mb-8 sm:mb-12" />
 
     <div class="flex justify-center">
-      <UButton icon="i-lucide-ticket-slash" size="xl" color="neutral" class="font-semibold rounded-full mx-auto px-4 py-3 sm:px-6 sm:py-4 text-lg sm:text-xl">
-        Prendre un ticket
-      </UButton>
+      <UModal 
+        v-model:open="isModalOpen"
+        title="Mon pari"
+        :ui="{
+          header: 'text-2xl font-bold'
+        }"
+      >
+        <UButton 
+          label="Prendre un ticket" 
+          icon="i-lucide-ticket-slash" 
+          size="xl" 
+          class="font-semibold rounded-full mx-auto px-4 py-3 sm:px-6 sm:py-4 text-lg sm:text-xl"
+          @click="isModalOpen = true"
+        />
+
+        <template #body>
+          <TicketForm @submit="handleTicketSubmit" @close="closeModal" />
+        </template>
+      </UModal>
     </div>
 
   </UContainer>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import CountdownBlock from '~/components/Countdown.vue'
+import TicketForm from '~/components/TicketForm.vue'
 import { useColorMode } from '@vueuse/core'
 
 const colorMode = useColorMode()
@@ -49,8 +66,23 @@ const isDark = computed({
 })
 
 const isMounted = ref(false)
+const isModalOpen = ref(false)
+
 onMounted(() => {
   isMounted.value = true
 })
 
+function handleTicketSubmit(data: {
+  isMale: boolean
+  estimatedDate: unknown
+  weight: number
+  firstName: string
+}) {
+  console.log('Ticket reçu dans la page parent:', data)
+  // TODO: Ici on pourra intégrer avec Supabase
+}
+
+function closeModal() {
+  isModalOpen.value = false
+}
 </script>

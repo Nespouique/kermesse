@@ -17,6 +17,10 @@
     },
     "nuxt": {
       "url": "https://mcp.nuxt.com/sse"
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
     }
   }
 }
