@@ -1,6 +1,14 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+:root {
+  --ui-primary: black;
+}
+
+.dark {
+  --ui-primary: white;
+}
+
 .kermesse-bg {
   background: repeating-linear-gradient(225deg, #ffe4ec 0 10px, #e0f2ff 10px 20px);
 }

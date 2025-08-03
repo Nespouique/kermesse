@@ -22,36 +22,85 @@
       </div>
     </div>
 
-    <CountdownBlock class="mb-8 sm:mb-12" />
+    <CountdownBlock class="mb-10 sm:mb-12" />
 
-    <div class="flex justify-center">
-      <UModal 
-        v-model:open="isModalOpen"
-        title="Mon pari"
-        :ui="{
-          header: 'text-2xl font-bold'
-        }"
-      >
-        <UButton 
-          label="Prendre un ticket" 
-          icon="i-lucide-ticket-slash" 
-          size="xl" 
-          class="font-semibold rounded-full mx-auto px-4 py-3 sm:px-6 sm:py-4 text-lg sm:text-xl"
-          @click="isModalOpen = true"
-        />
+    <!-- Section avec Tabs -->
+    <div id="tabs-section" class="mx-auto">
+      <UTabs v-model="activeTab" color="neutral" :items="tabItems" class="w-full" size="xl" :ui="{
+        list: 'divide-x-1 divide-gray-800 dark:divide-gray-200 rounded-none bg-[var(--ui-bg)]',
+        trigger: 'rounded-none data-[state=inactive]:text-[var(--ui-text)]',
+        indicator: 'rounded-none',
+      }">
+        <!-- Premier tab : Faire mon pari -->
+        <template #pari>
+          <div class="p-6">
+            <UStepper v-model="currentStep" color="neutral" :items="stepperItems" class="w-full" :ui="{
+              trigger: 'bg-[var(--ui-bg)] data-[state=inactive]:text-[var(--ui-text)]',
+            }">
+              <!-- Step 1: Pari -->
+              <template #pari-content>
+                <div class="pt-10 min-h-[350px]">
+                  <TicketForm @change="handleBetChange" @cancel="resetForm" />
+                </div>
+              </template>
 
-        <template #body>
-          <TicketForm @submit="handleTicketSubmit" @close="closeModal" />
+              <!-- Step 2: Avatar -->
+              <template #avatar-content>
+                <div class="pt-10 min-h-[350px]">
+                  <div class="text-center">
+                    <div class="space-y-9">
+                      <p class="block text-sm font-medium mb-3">Chantier en cours...</p>
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Step 3: Informations utilisateur -->
+              <template #info-content>
+                <div class="pt-10 min-h-[350px]">
+                  <div class="space-y-9">
+                    <div class="grid grid-cols-2 gap-6 sm:gap-16">
+                      <div>
+                        <label class="block text-sm font-medium mb-3">Prénom *</label>
+                        <UInput v-model="userInfo.firstName" placeholder="Entrez votre prénom" color="primary"
+                          variant="outline" required class="w-full" />
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium mb-3">Nom *</label>
+                        <UInput v-model="userInfo.lastName" placeholder="Entrez votre nom" color="primary"
+                          variant="outline" required class="w-full" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </UStepper>
+
+            <!-- Boutons de navigation unifiés -->
+            <div class="flex justify-between">
+              <UButton color="neutral" label="Précédent" :disabled="!canGoPrev" @click="goToPrevStep" />
+              <UButton color="neutral" :label="isLastStep ? 'Envoyer' : 'Suivant'" :disabled="!canGoNext"
+                @click="isLastStep ? submitFinalForm() : goToNextStep()" />
+            </div>
+          </div>
         </template>
-      </UModal>
+
+        <!-- Deuxième tab : Voir les paris -->
+        <template #paris>
+          <div class="p-6 text-center">
+            <h3 class="text-lg font-semibold mb-4">Liste des paris</h3>
+            <p class="text-gray-600 dark:text-gray-400">Fonctionnalité à venir...</p>
+          </div>
+        </template>
+      </UTabs>
     </div>
 
   </UContainer>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
-import CountdownBlock from '~/components/Countdown.vue'
+import { computed, ref, onMounted, watch, nextTick } from 'vue'
+import CountdownBlock from '~/components/CountDown.vue'
 import TicketForm from '~/components/TicketForm.vue'
 import { useColorMode } from '@vueuse/core'
 
@@ -66,23 +115,199 @@ const isDark = computed({
 })
 
 const isMounted = ref(false)
-const isModalOpen = ref(false)
+
+// Variables pour les tabs et stepper
+const activeTab = ref<string | undefined>(undefined) // Aucun tab sélectionné par défaut
+const currentStep = ref(0)
+
+// Données utilisateur
+const userInfo = ref({
+  firstName: '',
+  lastName: ''
+})
+
+// Données du formulaire de pari (conservées depuis TicketForm)
+const betData = ref<{
+  isMale: boolean
+  estimatedDate: unknown
+  weight: number
+  firstName: string
+} | null>(null)
+
+// Configuration des tabs
+const tabItems = [
+  {
+    label: 'Faire mon pari',
+    icon: 'i-lucide-dices',
+    value: 'pari',
+    slot: 'pari'
+  },
+  {
+    label: 'Voir les paris',
+    icon: 'i-lucide-eye',
+    value: 'paris',
+    slot: 'paris'
+  }
+]
+
+// Configuration du stepper
+const stepperItems = [
+  {
+    title: 'Pari',
+    description: 'Faites votre pari sur le bébé',
+    icon: 'i-lucide-dices',
+    slot: 'pari-content'
+  },
+  {
+    title: 'Avatar',
+    description: 'Sélectionnez votre avatar',
+    icon: 'i-lucide-piggy-bank',
+    slot: 'avatar-content'
+  },
+  {
+    title: 'Mes informations',
+    description: 'Complétez vos informations',
+    icon: 'i-lucide-user',
+    slot: 'info-content'
+  }
+]
 
 onMounted(() => {
   isMounted.value = true
 })
 
-function handleTicketSubmit(data: {
+// Watcher pour gérer les changements d'étape via le stepper
+watch(currentStep, (newStep) => {
+  console.log('Step changed to:', newStep, typeof newStep)
+  // S'assurer que currentStep est bien un nombre
+  if (typeof newStep !== 'number') {
+    console.warn('currentStep should be a number, got:', newStep)
+    return
+  }
+  // Force la réévaluation des validations
+  nextTick(() => {
+    console.log('After step change - canGoNext:', canGoNext.value, 'canGoPrev:', canGoPrev.value)
+  })
+})
+
+// Watcher pour le scroll automatique lors du changement de tab
+watch(activeTab, (newTab) => {
+  if (newTab) {
+    nextTick(() => {
+      nextTick(() => {
+        setTimeout(() => {
+          const tabsElement = document.getElementById('tabs-section')
+          if (tabsElement) {
+            const rect = tabsElement.getBoundingClientRect()
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+            const y = rect.top + scrollTop
+            window.scrollTo({ top: y, behavior: 'smooth' })
+          }
+        }, 100)
+      })
+    })
+  }
+})
+
+// Computed pour la validation des étapes
+const isStep1Valid = computed(() => {
+  const isValid = betData.value !== null
+  console.log('Step 1 validation:', isValid, betData.value)
+  return isValid
+})
+
+const isStep2Valid = computed(() => {
+  const isValid = true // Pas de validation pour l'avatar pour le moment
+  console.log('Step 2 validation:', isValid)
+  return isValid
+})
+
+const isStep3Valid = computed(() => {
+  const isValid = userInfo.value.firstName.trim() !== '' && userInfo.value.lastName.trim() !== ''
+  console.log('Step 3 validation:', isValid, userInfo.value)
+  return isValid
+})
+
+const canGoNext = computed(() => {
+  let canGo = false
+  switch (currentStep.value) {
+    case 0:
+      canGo = isStep1Valid.value
+      break
+    case 1:
+      canGo = isStep2Valid.value
+      break
+    case 2:
+      canGo = isStep3Valid.value
+      break
+    default:
+      canGo = false
+  }
+  console.log('Can go next:', canGo, 'Current step:', currentStep.value)
+  return canGo
+})
+
+const canGoPrev = computed(() => {
+  const canGo = currentStep.value > 0
+  console.log('Can go prev:', canGo, 'Current step:', currentStep.value)
+  return canGo
+})
+
+const isLastStep = computed(() => {
+  const isLast = currentStep.value === stepperItems.length - 1
+  console.log('Is last step:', isLast, 'Current step:', currentStep.value, 'Total steps:', stepperItems.length)
+  return isLast
+})
+
+// Fonctions de navigation du stepper
+function goToNextStep() {
+  if (currentStep.value < stepperItems.length - 1) {
+    currentStep.value++
+  }
+}
+
+function goToPrevStep() {
+  if (currentStep.value > 0) {
+    currentStep.value--
+  }
+}
+
+function resetForm() {
+  currentStep.value = 0
+  userInfo.value = {
+    firstName: '',
+    lastName: ''
+  }
+  betData.value = null
+}
+
+function handleBetChange(data: {
   isMale: boolean
   estimatedDate: unknown
   weight: number
   firstName: string
 }) {
-  console.log('Ticket reçu dans la page parent:', data)
-  // TODO: Ici on pourra intégrer avec Supabase
+  console.log('handleBetChange appelée avec:', data)
+  betData.value = data
+  console.log('betData.value après assignation:', betData.value)
 }
 
-function closeModal() {
-  isModalOpen.value = false
+function submitFinalForm() {
+  if (!userInfo.value.firstName || !userInfo.value.lastName) {
+    alert('Veuillez remplir tous les champs obligatoires')
+    return
+  }
+
+  const finalData = {
+    bet: betData.value,
+    user: userInfo.value
+  }
+
+  console.log('Pari final soumis:', finalData)
+  // TODO: Intégrer avec Supabase
+  alert('Pari enregistré avec succès !')
+
+  // Reset du formulaire
+  resetForm()
 }
 </script>

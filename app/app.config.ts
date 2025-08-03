@@ -5,6 +5,6 @@ export default defineAppConfig({
     },
     card: {
       base: 'rounded-2xl',
-    }
+    },
   },
 })
