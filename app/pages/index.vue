@@ -100,7 +100,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, watch, nextTick } from 'vue'
-import CountdownBlock from '~/components/CountDown.vue'
+import CountdownBlock from '~/components/Countdown.vue'
 import TicketForm from '~/components/TicketForm.vue'
 import { useColorMode } from '@vueuse/core'
 
