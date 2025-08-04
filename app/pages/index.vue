@@ -33,22 +33,24 @@
       }">
         <!-- Premier tab : Faire mon pari -->
         <template #pari>
-          <div class="p-6">
-            <UStepper v-model="currentStep" color="neutral" :items="stepperItems" class="w-full" :ui="{
+          <div class="py-6 sm:p-6">
+            <UStepper v-model="currentStep" color="neutral" :items="stepperItems" size="lg" class="w-full" :ui="{
               trigger: 'bg-[var(--ui-bg)] data-[state=inactive]:text-[var(--ui-text)]',
+              separator: 'bg-[var(--ui-bg)]',
             }">
               <!-- Step 1: Pari -->
               <template #pari-content>
-                <div class="pt-10 min-h-[350px]">
+                <div class="pt-6 min-h-[350px]">
                   <TicketForm @change="handleBetChange" @cancel="resetForm" />
                 </div>
               </template>
 
               <!-- Step 2: Avatar -->
               <template #avatar-content>
-                <div class="pt-10 min-h-[350px]">
+                <div class="pt-6 min-h-[350px]">
                   <div class="text-center">
                     <div class="space-y-9">
+                      <h3 class="text-lg font-bold mb-6 text-center">Personnalisez votre petit cochon !</h3>
                       <p class="block text-sm font-medium mb-3">Chantier en cours...</p>
                     </div>
                   </div>
@@ -57,8 +59,9 @@
 
               <!-- Step 3: Informations utilisateur -->
               <template #info-content>
-                <div class="pt-10 min-h-[350px]">
+                <div class="pt-6 min-h-[350px]">
                   <div class="space-y-9">
+                    <h3 class="text-lg font-bold mb-6 text-center">Aidez nous à vous retrouver !</h3>
                     <div class="grid grid-cols-2 gap-6 sm:gap-16">
                       <div>
                         <label class="block text-sm font-medium mb-3">Prénom *</label>
@@ -87,7 +90,7 @@
 
         <!-- Deuxième tab : Voir les paris -->
         <template #paris>
-          <div class="p-6 text-center">
+          <div class="py-6 sm:p-6 text-center">
             <h3 class="text-lg font-semibold mb-4">Liste des paris</h3>
             <p class="text-gray-600 dark:text-gray-400">Fonctionnalité à venir...</p>
           </div>
@@ -154,19 +157,16 @@ const tabItems = [
 const stepperItems = [
   {
     title: 'Pari',
-    description: 'Faites votre pari sur le bébé',
     icon: 'i-lucide-dices',
     slot: 'pari-content'
   },
   {
     title: 'Avatar',
-    description: 'Sélectionnez votre avatar',
     icon: 'i-lucide-piggy-bank',
     slot: 'avatar-content'
   },
   {
-    title: 'Mes informations',
-    description: 'Complétez vos informations',
+    title: 'Informations',
     icon: 'i-lucide-user',
     slot: 'info-content'
   }

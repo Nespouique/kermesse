@@ -1,5 +1,5 @@
 <template>
-  <UCard class="rounded-3xl shadow-lg p-2 sm:p-4">
+  <UCard class="shadow-lg p-2 sm:p-4">
     <template #header>
       <div class="flex items-center justify-center gap-2 text-center w-full">
         <Clock4 class="w-5 h-5 sm:w-7 sm:h-7" />

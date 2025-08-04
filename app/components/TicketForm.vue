@@ -1,11 +1,12 @@
 <template>
     <div>
         <form class="space-y-9" @submit.prevent="submitTicket">
+            <h3 class="text-lg font-bold mb-6 text-center">Faites vos jeux !</h3>
             <!-- Première ligne : Sexe + Date -->
             <div class="grid grid-cols-2 gap-6 sm:gap-16">
                 <!-- Sexe de l'enfant avec Switch -->
                 <div>
-                    <label class="block text-sm font-medium mb-3">Fille / Garçon ? *</label>
+                    <label class="block text-sm font-medium mb-5">Fille / Garçon ? *</label>
                     <div class="flex items-center justify-center gap-2">
                         <div class="flex items-center">
                             <UIcon name="i-lucide-venus" class="w-5 h-5 text-pink-500" />
@@ -42,12 +43,12 @@
             <div class="grid grid-cols-2 gap-6 sm:gap-16">
                 <!-- Poids avec Slider -->
                 <div>
-                    <label class="block text-sm font-medium mb-6">Poids estimé (kg) *</label>
-                    <div class="space-y-3">
-                        <USlider v-model="formData.weight" :min="2" :max="5" :step="0.1" color="neutral" size="lg" />
+                    <label class="block text-sm font-medium">Poids estimé *</label>
+                    <div class="space-y-2">
                         <div class="text-center">
                             <span class="text-sm font-medium">{{ formData.weight.toFixed(1) }} kg</span>
                         </div>
+                        <USlider v-model="formData.weight" :min="2" :max="5" :step="0.1" color="neutral" size="lg" />
                     </div>
                 </div>
 
