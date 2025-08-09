@@ -147,19 +147,17 @@
                             />
                           </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-6 sm:gap-16">
-                          <div>
-                            <label class="block text-sm font-medium mb-3">Email *</label>
-                            <UInput
-                              v-model="userInfo.email"
-                              type="email"
-                              placeholder="vous@example.com"
-                              color="primary"
-                              variant="outline"
-                              required
-                              class="w-full"
-                            />
-                          </div>
+                        <div>
+                          <label class="block text-sm font-medium mb-3">Email *</label>
+                          <UInput
+                            v-model="userInfo.email"
+                            type="email"
+                            placeholder="vous@example.com"
+                            color="primary"
+                            variant="outline"
+                            required
+                            class="w-full"
+                          />
                         </div>
                       </div>
                     </div>
@@ -646,9 +644,9 @@
       fire(120, 70)
       fire(80, 60, 250)
       fire(60, 80, 500)
-      fire(40, 50, 900)
-      fire(30, 90, 1300)
-      fire(50, 60, 1400)
+      fire(40, 50, 700)
+      fire(150, 90, 3000)
+      fire(80, 60, 3300)
     } catch (e) {
       console.warn('Confetti non chargé', e)
     }
