@@ -122,40 +122,44 @@
                       <h3 class="text-lg font-bold mb-6 text-center">
                         Aidez nous à vous retrouver !
                       </h3>
-                      <div class="grid grid-cols-2 gap-6 sm:gap-16">
-                        <div>
-                          <label class="block text-sm font-medium mb-3">Prénom *</label>
-                          <UInput
-                            v-model="userInfo.firstName"
-                            placeholder="Entrez votre prénom"
-                            color="primary"
-                            variant="outline"
-                            required
-                            class="w-full"
-                          />
+                      <div class="space-y-9">
+                        <div class="grid grid-cols-2 gap-6 sm:gap-16">
+                          <div>
+                            <label class="block text-sm font-medium mb-3">Prénom *</label>
+                            <UInput
+                              v-model="userInfo.firstName"
+                              placeholder="Entrez votre prénom"
+                              color="primary"
+                              variant="outline"
+                              required
+                              class="w-full"
+                            />
+                          </div>
+                          <div>
+                            <label class="block text-sm font-medium mb-3">Nom *</label>
+                            <UInput
+                              v-model="userInfo.lastName"
+                              placeholder="Entrez votre nom"
+                              color="primary"
+                              variant="outline"
+                              required
+                              class="w-full"
+                            />
+                          </div>
                         </div>
-                        <div>
-                          <label class="block text-sm font-medium mb-3">Nom *</label>
-                          <UInput
-                            v-model="userInfo.lastName"
-                            placeholder="Entrez votre nom"
-                            color="primary"
-                            variant="outline"
-                            required
-                            class="w-full"
-                          />
-                        </div>
-                        <div class="col-span-2">
-                          <label class="block text-sm font-medium mb-3">Email *</label>
-                          <UInput
-                            v-model="userInfo.email"
-                            type="email"
-                            placeholder="vous@example.com"
-                            color="primary"
-                            variant="outline"
-                            required
-                            class="w-full"
-                          />
+                        <div class="grid grid-cols-2 gap-6 sm:gap-16">
+                          <div>
+                            <label class="block text-sm font-medium mb-3">Email *</label>
+                            <UInput
+                              v-model="userInfo.email"
+                              type="email"
+                              placeholder="vous@example.com"
+                              color="primary"
+                              variant="outline"
+                              required
+                              class="w-full"
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -235,6 +239,27 @@
     lastName: '',
     email: '', // optionnel
   })
+
+  function normalizeName(raw: string): string {
+    if (!raw) return ''
+    return raw
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((word) =>
+        word
+          .split('-')
+          .map((part) =>
+            part
+              .split("'")
+              .map((seg) => (seg ? seg.charAt(0).toUpperCase() + seg.slice(1) : seg))
+              .join("'")
+          )
+          .join('-')
+      )
+      .join(' ')
+  }
 
   // État d'envoi
   const submitting = ref(false)
@@ -491,12 +516,19 @@
         if (!userInfo.value.email) return
         const participantEmail = userInfo.value.email.trim().toLowerCase()
         let participantId: string | null = null
+        // Normaliser les noms (Jean-Marc / Nom De Famille)
+        const normalizedFirst = normalizeName(userInfo.value.firstName)
+        const normalizedLast = normalizeName(userInfo.value.lastName)
+        // Met à jour l'état local (pour cohérence d'affichage post-submit éventuel)
+        userInfo.value.firstName = normalizedFirst
+        userInfo.value.lastName = normalizedLast
+
         const { data: inserted, error: insertErr } = await $supabase
           .from('participants')
           .insert({
             email: participantEmail,
-            first_name: userInfo.value.firstName.trim(),
-            last_name: userInfo.value.lastName.trim(),
+            first_name: normalizedFirst,
+            last_name: normalizedLast,
           })
           .select('id')
           .single()
@@ -616,6 +648,7 @@
       fire(60, 80, 500)
       fire(40, 50, 900)
       fire(30, 90, 1300)
+      fire(50, 60, 1400)
     } catch (e) {
       console.warn('Confetti non chargé', e)
     }

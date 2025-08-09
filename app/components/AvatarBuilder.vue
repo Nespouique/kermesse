@@ -231,8 +231,15 @@
     ;(['top', 'middle', 'bottom'] as const).forEach((key) => {
       const options = byCategory.value[key]
       if (!options || options.length === 0) return
-      const idx = Math.floor(Math.random() * options.length)
-      out[key] = options[idx] ?? null
+      if (key === 'middle') {
+        // Ajoute une possibilité "aucun" (null) dans le tirage
+        const total = options.length + 1 // +1 pour le cas aucun
+        const idx = Math.floor(Math.random() * total)
+        out[key] = idx === options.length ? null : (options[idx] ?? null)
+      } else {
+        const idx = Math.floor(Math.random() * options.length)
+        out[key] = options[idx] ?? null
+      }
     })
     selected.value = out
   }

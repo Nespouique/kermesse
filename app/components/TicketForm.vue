@@ -79,7 +79,7 @@
             <label class="block text-sm font-medium mb-3">Prénom (optionnel)</label>
             <UInput
               v-model="formData.firstName"
-              placeholder="Entrez un prénom"
+              placeholder="Prénom du bébé"
               color="primary"
               variant="outline"
               class="w-full"

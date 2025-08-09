@@ -200,6 +200,15 @@
     return `${jours} ${m} ${y}`
   }
 
+  function formatDateShort(d: string) {
+    const date = new Date(d)
+    if (Number.isNaN(date.getTime())) return '?'
+    const jj = String(date.getDate()).padStart(2, '0')
+    const mm = String(date.getMonth() + 1).padStart(2, '0')
+    const yyyy = date.getFullYear()
+    return `${jj}/${mm}/${yyyy}`
+  }
+
   function betRest(b: BetRow) {
     const sexePart = b.is_male ? "d'un garçon" : "d'une fille"
     const prenomSegment = b.baby_first_name
@@ -216,7 +225,7 @@
     const articleAdj = b.is_male ? 'un petit' : 'une petite'
     const nameOrWord = b.baby_first_name ? b.baby_first_name : b.is_male ? 'garçon' : 'fille'
     const poids = `${Number(b.weight_kg).toFixed(1).replace('.', ',')}kg`
-    const dateSegment = formatDateLong(b.estimated_date)
-    return `A parié sur la naissance d'${articleAdj} ${nameOrWord} de ${poids} pour le ${dateSegment}`
+    const dateSegment = formatDateShort(b.estimated_date)
+    return `A parié sur ${articleAdj} ${nameOrWord} de ${poids} pour le ${dateSegment}`
   }
 </script>
