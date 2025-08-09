@@ -33,11 +33,17 @@
             <label class="block text-sm font-medium mb-3">Date estimée *</label>
             <UPopover>
               <UButton color="neutral" variant="outline" class="w-full" icon="i-lucide-calendar">
-                {{
-                  calendarDate
-                    ? df.format((calendarDate as CalendarDate).toDate(getLocalTimeZone()))
-                    : 'Sélectionner une date'
-                }}
+                <template v-if="calendarDate">
+                  <!-- Format court sur mobile -->
+                  <span class="inline sm:hidden">
+                    {{ dfShort.format((calendarDate as CalendarDate).toDate(getLocalTimeZone())) }}
+                  </span>
+                  <!-- Format long à partir du breakpoint sm -->
+                  <span class="hidden sm:inline">
+                    {{ dfLong.format((calendarDate as CalendarDate).toDate(getLocalTimeZone())) }}
+                  </span>
+                </template>
+                <template v-else>Sélectionner une date</template>
               </UButton>
 
               <template #content>
@@ -113,10 +119,9 @@
     firstName: '', // prénom optionnel
   })
 
-  // Formatter pour les dates
-  const df = new DateFormatter('fr-FR', {
-    dateStyle: 'long',
-  })
+  // Formatters de date : long (desktop) et court (mobile)
+  const dfLong = new DateFormatter('fr-FR', { dateStyle: 'long' })
+  const dfShort = new DateFormatter('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
   // Watcher pour émettre les changements
   watch(

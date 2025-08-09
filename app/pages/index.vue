@@ -29,13 +29,10 @@
       </div>
       <div class="text-center sm:text-left">
         <h1 class="font-bold mb-6 sm:mb-2 drop-shadow-lg text-5xl">Kermesse du Bébé</h1>
-        <h2 class="text-xl font-medium">
-          Inspiré des kermesses bretonnes où les participants parient sur le poids d'un cochon.
-          <br />
-          Ici, c'est notre petit cochon à naître qui fait l'objet de tous les paris !
-          <br />
-          Que la tradition continue...
+        <h2 class="text-xl font-medium mb-2">
+          Inspiré des kermesses bretonnes où les participants parient sur le poids du cochon.
         </h2>
+        <h2 class="text-xl font-medium">Que la tradition continue...</h2>
       </div>
     </div>
 
@@ -50,92 +47,104 @@
         class="w-full"
         size="xl"
         :ui="{
-          list: 'divide-x-1 divide-gray-800 dark:divide-gray-200 rounded-none bg-[var(--ui-bg)]',
+          root: 'gap-0 flex-col w-full',
+          list: 'divide-x-1 divide-gray-800 dark:divide-gray-200 rounded-none bg-[var(--ui-bg)] shadow-md',
           trigger: 'rounded-none data-[state=inactive]:text-[var(--ui-text)]',
           indicator: 'rounded-none',
         }"
       >
         <!-- Premier tab : Faire mon pari -->
         <template #pari>
-          <div id="stepper-section" class="py-6 sm:p-6">
-            <UStepper
-              v-model="currentStep"
-              color="neutral"
-              :items="stepperItems"
-              size="lg"
-              class="w-full"
-              :ui="{
-                trigger: 'bg-[var(--ui-bg)] data-[state=inactive]:text-[var(--ui-text)]',
-                separator: 'bg-[var(--ui-bg)]',
-              }"
-            >
-              <!-- Step 1: Pari -->
-              <template #pari-content>
-                <div class="pt-6 min-h-[350px]">
-                  <TicketForm @change="handleBetChange" @cancel="resetForm" />
-                </div>
-              </template>
-
-              <!-- Step 2: Avatar -->
-              <template #avatar-content>
-                <div class="pt-6 min-h-[350px]">
-                  <div class="space-y-6">
-                    <h3 class="text-lg font-bold text-center">
-                      Personnalisez votre petit cochon !
-                    </h3>
-                    <AvatarBuilder @change="onAvatarChange" />
+          <div id="stepper-section">
+            <div class="bg-[var(--ui-bg)] rounded-none shadow-md px-4 sm:px-20 py-6 sm:py-10">
+              <UStepper
+                v-model="currentStep"
+                color="neutral"
+                :items="stepperItems"
+                size="lg"
+                class="w-full pt-2"
+              >
+                <!-- Step 1: Pari -->
+                <template #pari-content>
+                  <div class="pt-6">
+                    <TicketForm @change="handleBetChange" @cancel="resetForm" />
                   </div>
-                </div>
-              </template>
+                </template>
 
-              <!-- Step 3: Informations utilisateur -->
-              <template #info-content>
-                <div class="pt-6 min-h-[350px]">
-                  <div class="space-y-9">
-                    <h3 class="text-lg font-bold mb-6 text-center">
-                      Aidez nous à vous retrouver !
-                    </h3>
-                    <div class="grid grid-cols-2 gap-6 sm:gap-16">
-                      <div>
-                        <label class="block text-sm font-medium mb-3">Prénom *</label>
-                        <UInput
-                          v-model="userInfo.firstName"
-                          placeholder="Entrez votre prénom"
-                          color="primary"
-                          variant="outline"
-                          required
-                          class="w-full"
-                        />
-                      </div>
-                      <div>
-                        <label class="block text-sm font-medium mb-3">Nom *</label>
-                        <UInput
-                          v-model="userInfo.lastName"
-                          placeholder="Entrez votre nom"
-                          color="primary"
-                          variant="outline"
-                          required
-                          class="w-full"
-                        />
+                <!-- Step 2: Avatar -->
+                <template #avatar-content>
+                  <div class="pt-6">
+                    <div class="space-y-6">
+                      <h3 class="text-lg font-bold text-center">Personnalisez votre cochon !</h3>
+                      <AvatarBuilder @change="onAvatarChange" />
+                    </div>
+                  </div>
+                </template>
+
+                <!-- Step 3: Informations utilisateur -->
+                <template #info-content>
+                  <div class="pt-6">
+                    <div class="space-y-9">
+                      <h3 class="text-lg font-bold mb-6 text-center">
+                        Aidez nous à vous retrouver !
+                      </h3>
+                      <div class="grid grid-cols-2 gap-6 sm:gap-16">
+                        <div>
+                          <label class="block text-sm font-medium mb-3">Prénom *</label>
+                          <UInput
+                            v-model="userInfo.firstName"
+                            placeholder="Entrez votre prénom"
+                            color="primary"
+                            variant="outline"
+                            required
+                            class="w-full"
+                          />
+                        </div>
+                        <div>
+                          <label class="block text-sm font-medium mb-3">Nom *</label>
+                          <UInput
+                            v-model="userInfo.lastName"
+                            placeholder="Entrez votre nom"
+                            color="primary"
+                            variant="outline"
+                            required
+                            class="w-full"
+                          />
+                        </div>
+                        <div class="col-span-2">
+                          <label class="block text-sm font-medium mb-3">Email *</label>
+                          <UInput
+                            v-model="userInfo.email"
+                            type="email"
+                            placeholder="vous@example.com"
+                            color="primary"
+                            variant="outline"
+                            required
+                            class="w-full"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </template>
-            </UStepper>
-
-            <!-- Boutons de navigation unifiés -->
-            <div class="flex justify-between">
+                </template>
+              </UStepper>
+            </div>
+            <!-- Boutons de navigation (hors fond blanc) -->
+            <div class="flex justify-between mt-4 gap-4">
               <UButton
                 color="neutral"
+                variant="solid"
                 label="Précédent"
                 :disabled="!canGoPrev"
+                class="shadow-lg"
                 @click="goToPrevStep"
               />
               <UButton
                 color="neutral"
+                variant="solid"
                 :label="isLastStep ? 'Envoyer' : 'Suivant'"
                 :disabled="!canGoNext"
+                class="shadow-lg"
                 @click="isLastStep ? submitFinalForm() : goToNextStep()"
               />
             </div>
@@ -144,7 +153,7 @@
 
         <!-- Deuxième tab : Voir les paris -->
         <template #paris>
-          <div class="py-6 sm:p-6 text-center">
+          <div class="bg-[var(--ui-bg)] rounded-none shadow-md px-4 py-6">
             <h3 class="text-lg font-semibold mb-4">Liste des paris</h3>
             <p class="text-gray-600 dark:text-gray-400">Fonctionnalité à venir...</p>
           </div>
@@ -181,6 +190,7 @@
   const userInfo = ref({
     firstName: '',
     lastName: '',
+    email: '', // optionnel
   })
 
   // Données du formulaire de pari (conservées depuis TicketForm)
@@ -371,6 +381,7 @@
     userInfo.value = {
       firstName: '',
       lastName: '',
+      email: '',
     }
     betData.value = null
   }

@@ -2,10 +2,7 @@
   <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 pb-6">
     <!-- Preview -->
     <div class="flex flex-col items-center gap-3 lg:col-span-1">
-      <div
-        ref="previewRef"
-        class="relative w-full max-w-[250px] aspect-[13/15] rounded-lg bulle-bg-subtle shadow-inner overflow-hidden"
-      >
+      <div ref="previewRef" class="relative w-full max-w-[250px] aspect-[13/15] overflow-hidden">
         <!-- Base + Selected layers -->
         <img
           v-for="img in renderedLayers"
@@ -144,9 +141,9 @@
 
   // Open state for collapsibles (so we can bind rotation deterministically)
   const openMap = ref<Record<'top' | 'middle' | 'bottom', boolean>>({
-    top: false,
-    middle: false,
-    bottom: false,
+    top: true,
+    middle: true,
+    bottom: true,
   })
 
   const selectableCategories = [
