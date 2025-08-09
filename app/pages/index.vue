@@ -1,5 +1,39 @@
 <template>
   <UContainer>
+    <!-- Modal de succès après enregistrement du pari -->
+    <ClientOnly>
+      <UModal
+        v-model:open="showSuccessModal"
+        title="Félicitations ! 🎉"
+        :close="false"
+        :ui="{
+          header: 'flex justify-center',
+          title: 'w-full text-center text-3xl font-extrabold',
+          body: 'text-center',
+          footer: 'justify-center',
+        }"
+      >
+        <template #body>
+          <div class="space-y-6 py-2 px-2">
+            <p class="leading-relaxed text-lg">
+              Votre pari a été enregistré. Rendez-vous à la naissance pour découvrir si vous avez
+              gagné le gros lot !
+            </p>
+          </div>
+        </template>
+        <template #footer>
+          <div class="flex justify-center w-full">
+            <UButton
+              color="neutral"
+              variant="solid"
+              label="Voir les autres paris"
+              size="lg"
+              @click="goToParisTab"
+            />
+          </div>
+        </template>
+      </UModal>
+    </ClientOnly>
     <!-- Switch en haut à droite -->
     <div class="flex justify-end">
       <USwitch
@@ -142,8 +176,8 @@
               <UButton
                 color="neutral"
                 variant="solid"
-                :label="isLastStep ? 'Envoyer' : 'Suivant'"
-                :disabled="!canGoNext"
+                :label="isLastStep ? (submitting ? 'Envoi...' : 'Envoyer') : 'Suivant'"
+                :disabled="submitting || !canGoNext"
                 class="shadow-lg"
                 @click="isLastStep ? submitFinalForm() : goToNextStep()"
               />
@@ -153,9 +187,8 @@
 
         <!-- Deuxième tab : Voir les paris -->
         <template #paris>
-          <div class="bg-[var(--ui-bg)] rounded-none shadow-md px-4 py-6">
-            <h3 class="text-lg font-semibold mb-4">Liste des paris</h3>
-            <p class="text-gray-600 dark:text-gray-400">Fonctionnalité à venir...</p>
+          <div id="bets-section" class="bg-[var(--ui-bg)] rounded-none shadow-md px-4 py-6">
+            <BetsList />
           </div>
         </template>
       </UTabs>
@@ -168,6 +201,7 @@
   import BabyCountdown from '~/components/BabyCountdown.vue'
   import TicketForm from '~/components/TicketForm.vue'
   import AvatarBuilder from '~/components/AvatarBuilder.vue'
+  import BetsList from '~/components/BetsList.vue'
   import { useColorMode } from '@vueuse/core'
 
   const colorMode = useColorMode()
@@ -181,6 +215,15 @@
   })
 
   const isMounted = ref(false)
+  const showSuccessModal = ref(false)
+  watch(showSuccessModal, async (val) => {
+    console.log('showSuccessModal ->', val)
+    if (val) {
+      await nextTick()
+      setTimeout(() => triggerConfetti(), 80)
+    }
+  })
+  const toast = useToast()
 
   // Variables pour les tabs et stepper
   const activeTab = ref<string | undefined>(undefined) // Aucun tab sélectionné par défaut
@@ -192,6 +235,9 @@
     lastName: '',
     email: '', // optionnel
   })
+
+  // État d'envoi
+  const submitting = ref(false)
 
   // Données du formulaire de pari (conservées depuis TicketForm)
   const betData = ref<{
@@ -266,21 +312,23 @@
 
   // Watcher pour le scroll automatique lors du changement de tab
   watch(activeTab, (newTab) => {
-    if (newTab) {
-      nextTick(() => {
-        nextTick(() => {
-          setTimeout(() => {
-            const tabsElement = document.getElementById('tabs-section')
-            if (tabsElement) {
-              const rect = tabsElement.getBoundingClientRect()
-              const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-              const y = rect.top + scrollTop
-              window.scrollTo({ top: y, behavior: 'smooth' })
-            }
-          }, 100)
-        })
-      })
-    }
+    if (!newTab) return
+    nextTick(() => {
+      setTimeout(() => {
+        const targetId =
+          newTab === 'paris'
+            ? 'bets-section'
+            : newTab === 'pari'
+              ? 'stepper-section'
+              : 'tabs-section'
+        const el = document.getElementById(targetId) || document.getElementById('tabs-section')
+        if (el) {
+          const rect = el.getBoundingClientRect()
+          const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+          ;(window as Window).scrollTo({ top: rect.top + scrollTop, behavior: 'smooth' })
+        }
+      }, 60)
+    })
   })
 
   // Computed pour la validation des étapes
@@ -320,7 +368,10 @@
   })
 
   const isStep3Valid = computed(() => {
-    const isValid = userInfo.value.firstName.trim() !== '' && userInfo.value.lastName.trim() !== ''
+    const email = userInfo.value.email.trim()
+    const emailOk = email.length > 0
+    const isValid =
+      userInfo.value.firstName.trim() !== '' && userInfo.value.lastName.trim() !== '' && emailOk
     console.log('Step 3 validation:', isValid, userInfo.value)
     return isValid
   })
@@ -384,6 +435,7 @@
       email: '',
     }
     betData.value = null
+    submitting.value = false
   }
 
   function handleBetChange(data: {
@@ -399,7 +451,19 @@
 
   function submitFinalForm() {
     if (!userInfo.value.firstName || !userInfo.value.lastName) {
-      alert('Veuillez remplir tous les champs obligatoires')
+      toast.add({
+        title: 'Champs manquants',
+        description: 'Veuillez remplir prénom et nom.',
+        color: 'error',
+      })
+      return
+    }
+    if (!userInfo.value.email.trim()) {
+      toast.add({
+        title: 'Email requis',
+        description: 'Veuillez saisir votre adresse email.',
+        color: 'error',
+      })
       return
     }
 
@@ -410,10 +474,150 @@
     }
 
     console.log('Pari final soumis:', finalData)
-    // TODO: Intégrer avec Supabase
-    alert('Pari enregistré avec succès !')
+    // Intégration Supabase
+    const { $supabase } = useNuxtApp()
+    if (!$supabase) {
+      toast.add({
+        title: 'Configuration',
+        description: 'Supabase non configuré.',
+        color: 'error',
+      })
+      return
+    }
+    ;(async () => {
+      try {
+        submitting.value = true
+        // Insert participant (puis select si conflit) pour éviter besoin policy UPDATE
+        if (!userInfo.value.email) return
+        const participantEmail = userInfo.value.email.trim().toLowerCase()
+        let participantId: string | null = null
+        const { data: inserted, error: insertErr } = await $supabase
+          .from('participants')
+          .insert({
+            email: participantEmail,
+            first_name: userInfo.value.firstName.trim(),
+            last_name: userInfo.value.lastName.trim(),
+          })
+          .select('id')
+          .single()
+        if (insertErr) {
+          const ie = insertErr as unknown as { code?: string; message?: string }
+          if (ie.code === '23505') {
+            // Conflit email participant => déjà inscrit => on arrête (pas de tentative bet)
+            toast.add({
+              title: 'Erreur - Email déjà utilisé',
+              description: "Vous ne pouvez faire qu'un seul pari par adresse mail",
+              color: 'error',
+            })
+            return
+          } else if (ie.code === '42501') {
+            toast.add({
+              title: 'Erreur - Accès refusé',
+              description:
+                "Impossible d'enregistrer le participant (RLS). Contactez un administrateur.",
+              color: 'error',
+            })
+            return
+          } else {
+            throw insertErr
+          }
+        } else if (inserted) {
+          participantId = inserted.id
+        }
+        if (!participantId) throw new Error('ID participant manquant')
 
-    // Reset du formulaire
-    resetForm()
+        // Insert bet (one per participant enforced by db unique constraint)
+        if (!betData.value) throw new Error('Données de pari manquantes')
+
+        interface CalendarLike {
+          year?: number
+          month?: number
+          day?: number
+        }
+        const estimatedDateRaw = betData.value.estimatedDate as unknown as CalendarLike | undefined
+        let dateISO: string | null = null
+        if (
+          estimatedDateRaw &&
+          typeof estimatedDateRaw.year === 'number' &&
+          typeof estimatedDateRaw.month === 'number' &&
+          typeof estimatedDateRaw.day === 'number'
+        ) {
+          const y = estimatedDateRaw.year
+          const m = String(estimatedDateRaw.month).padStart(2, '0')
+          const d = String(estimatedDateRaw.day).padStart(2, '0')
+          dateISO = `${y}-${m}-${d}`
+        }
+        if (!dateISO) throw new Error('Date estimée invalide')
+
+        const { data: bet, error: bErr } = await $supabase
+          .from('bets')
+          .insert({
+            participant_id: participantId,
+            is_male: betData.value.isMale,
+            estimated_date: dateISO,
+            weight_kg: betData.value.weight,
+            baby_first_name: betData.value.firstName || null,
+          })
+          .select()
+          .single()
+        if (bErr) {
+          const errObj = bErr as unknown as { code?: string; message?: string }
+          if (errObj.code === '23505') {
+            toast.add({
+              title: 'Erreur - Email déjà utilisé',
+              description: "Vous ne pouvez faire qu'un seul pari par adresse mail",
+              color: 'error',
+            })
+            return
+          }
+          throw bErr
+        }
+
+        // Insert avatar layers (store just names)
+        const { top, middle, bottom } = avatarSelection.value
+        const { error: aErr } = await $supabase.from('avatars').insert({
+          bet_id: bet.id,
+          top_layer: top?.name || null,
+          middle_layer: middle?.name || null,
+          bottom_layer: bottom?.name || null,
+        })
+        if (aErr) throw aErr
+
+        showSuccessModal.value = true
+        resetForm()
+      } catch (err) {
+        console.error(err)
+        toast.add({
+          title: 'Erreur',
+          description:
+            err instanceof Error ? err.message : "Erreur inconnue lors de l'enregistrement",
+          color: 'error',
+        })
+      } finally {
+        submitting.value = false
+      }
+    })()
+  }
+
+  function goToParisTab() {
+    showSuccessModal.value = false
+    activeTab.value = 'paris'
+  }
+
+  async function triggerConfetti() {
+    if (typeof window === 'undefined') return
+    try {
+      // @ts-expect-error Module déclaré via types/canvas-confetti.d.ts
+      const { default: confetti } = await import('canvas-confetti')
+      const fire = (particleCount: number, spread: number, delay = 0) =>
+        setTimeout(() => confetti({ particleCount, spread, origin: { y: 0.5 } }), delay)
+      fire(120, 70)
+      fire(80, 60, 250)
+      fire(60, 80, 500)
+      fire(40, 50, 900)
+      fire(30, 90, 1300)
+    } catch (e) {
+      console.warn('Confetti non chargé', e)
+    }
   }
 </script>

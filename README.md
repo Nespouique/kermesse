@@ -44,6 +44,28 @@ npm run dev
 Voir la documentation Nuxt pour le déploiement :  
 https://nuxt.com/docs/getting-started/deployment
 
+### Configuration Supabase / Vercel
+
+Variables d'environnement à définir (Vercel Project Settings > Environment Variables) :
+
+```
+NUXT_PUBLIC_SUPABASE_URL=https://wyxmlrjafkmkvzrtxeiy.supabase.co
+NUXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5eG1scmphZmtta3Z6cnR4ZWl5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyMTI1MzUsImV4cCI6MjA2ODc4ODUzNX0._jXKEJYY5sXF6cElJtz3UKh6tMcrCIRhbiJfLjzTnS0
+```
+
+En local, copier `.env.example` en `.env.local` et ajuster si besoin.
+
+### Étapes de déploiement Vercel (résumé)
+
+1. Importer le repo sur Vercel.
+2. Renseigner les deux variables d'environnement ci-dessus (Production + Preview + Development si souhaité).
+3. Lancer le premier déploiement.
+4. Vérifier un pari test (onglet "Faire mon pari" puis onglet "Voir les paris").
+
+### Sécurité / RLS
+
+Les policies actuelles autorisent les inserts anonymes. À restreindre plus tard (ex: via une fonction RPC + captcha) si usage public large.
+
 ---
 
 **Projet open source** — Repo

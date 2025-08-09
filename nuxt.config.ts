@@ -20,4 +20,17 @@ export default defineNuxtConfig({
     fallback: 'light', // si rien n'est trouvé
     storageKey: 'nuxt-color-mode',
   },
+
+  runtimeConfig: {
+    public: {
+      supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL || '',
+      supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY || '',
+    },
+  },
+
+  typescript: {
+    tsConfig: {
+      include: ['types/**/*.d.ts'],
+    },
+  },
 })
