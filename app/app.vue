@@ -7,11 +7,11 @@
 </template>
 
 <script setup lang="ts">
-import { useHead } from '#imports'
+  import { useHead } from '#imports'
 
-useHead({
-  bodyAttrs: {
-    class: 'kermesse-bg'
-  }
-})
+  useHead({
+    bodyAttrs: {
+      class: 'kermesse-bg',
+    },
+  })
 </script>

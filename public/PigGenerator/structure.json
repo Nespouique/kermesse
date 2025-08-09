@@ -1,0 +1,253 @@
+{
+  "base": {
+    "width": 1300,
+    "height": 1500
+  },
+  "layers": [
+    {
+      "name": "PigFace",
+      "x": 650,
+      "y": 920,
+      "width": 965,
+      "height": 845,
+      "z": 7,
+      "category": "base"
+    },
+    {
+      "name": "Nose",
+      "x": 643,
+      "y": 1042,
+      "width": 305,
+      "height": 218,
+      "z": 9,
+      "category": "base"
+    },
+    {
+      "name": "Pot",
+      "x": 680,
+      "y": 372,
+      "width": 552,
+      "height": 728,
+      "z": 10,
+      "category": "top"
+    },
+    {
+      "name": "Breizh",
+      "x": 705,
+      "y": 778,
+      "width": 1030,
+      "height": 1372,
+      "z": 10,
+      "category": "top"
+    },
+    {
+      "name": "Hat",
+      "x": 650,
+      "y": 430,
+      "width": 807,
+      "height": 330,
+      "z": 10,
+      "category": "top"
+    },
+    {
+      "name": "Beret",
+      "x": 745,
+      "y": 529,
+      "width": 773,
+      "height": 364,
+      "z": 10,
+      "category": "top"
+    },
+    {
+      "name": "Crown",
+      "x": 650,
+      "y": 477,
+      "width": 538,
+      "height": 352,
+      "z": 10,
+      "category": "top"
+    },
+    {
+      "name": "Tarboush",
+      "x": 553,
+      "y": 562,
+      "width": 528,
+      "height": 382,
+      "z": 10,
+      "category": "top"
+    },
+    {
+      "name": "Party_Hat",
+      "x": 570,
+      "y": 467,
+      "width": 326,
+      "height": 353,
+      "z": 10,
+      "category": "top"
+    },
+    {
+      "name": "HeadsetBack",
+      "x": 647,
+      "y": 523,
+      "width": 915,
+      "height": 300,
+      "z": 6,
+      "category": "top",
+      "goesWith": "HeadsetFront"
+    },
+    {
+      "name": "HeadsetFront",
+      "x": 644,
+      "y": 970,
+      "width": 1143,
+      "height": 639,
+      "z": 10,
+      "category": "top",
+      "goesWith": "HeadsetBack"
+    },
+    {
+      "name": "Sunglasses",
+      "x": 650,
+      "y": 919,
+      "width": 845,
+      "height": 263,
+      "z": 8,
+      "category": "middle"
+    },
+    {
+      "name": "Glasses_Round",
+      "x": 653,
+      "y": 919,
+      "width": 843,
+      "height": 295,
+      "z": 8,
+      "category": "middle"
+    },
+    {
+      "name": "Glasses_Square",
+      "x": 650,
+      "y": 917,
+      "width": 846,
+      "height": 225,
+      "z": 8,
+      "category": "middle"
+    },
+    {
+      "name": "Glasses_Heart",
+      "x": 649,
+      "y": 929,
+      "width": 848,
+      "height": 308,
+      "z": 8,
+      "category": "middle"
+    },
+    {
+      "name": "Arrosoir",
+      "x": 492,
+      "y": 1292,
+      "width": 710,
+      "height": 394,
+      "z": 10,
+      "category": "bottom"
+    },
+    {
+      "name": "Moustache",
+      "x": 652,
+      "y": 1141,
+      "width": 510,
+      "height": 165,
+      "z": 10,
+      "category": "bottom"
+    },
+    {
+      "name": "Cookie",
+      "x": 375,
+      "y": 1238,
+      "width": 330,
+      "height": 313,
+      "z": 10,
+      "category": "bottom"
+    },
+    {
+      "name": "Map",
+      "x": 641,
+      "y": 1326,
+      "width": 550,
+      "height": 345,
+      "z": 10,
+      "category": "bottom"
+    },
+    {
+      "name": "Bag",
+      "x": 650,
+      "y": 1371,
+      "width": 481,
+      "height": 250,
+      "z": 10,
+      "category": "bottom"
+    },
+    {
+      "name": "Laptop",
+      "x": 642,
+      "y": 1285,
+      "width": 524,
+      "height": 270,
+      "z": 10,
+      "category": "bottom"
+    },
+    {
+      "name": "Controller",
+      "x": 1022,
+      "y": 1330,
+      "width": 560,
+      "height": 298,
+      "z": 10,
+      "category": "bottom"
+    },
+    {
+      "name": "Flashlight",
+      "x": 856,
+      "y": 1139,
+      "width": 874,
+      "height": 538,
+      "z": 10,
+      "category": "bottom"
+    },
+    {
+      "name": "Book",
+      "x": 644,
+      "y": 1250,
+      "width": 647,
+      "height": 363,
+      "z": 10,
+      "category": "bottom"
+    },
+    {
+      "name": "Lawyer",
+      "x": 659,
+      "y": 1353,
+      "width": 964,
+      "height": 294,
+      "z": 10,
+      "category": "bottom"
+    },
+    {
+      "name": "Party_Serpentin",
+      "x": 944,
+      "y": 1106,
+      "width": 374,
+      "height": 225,
+      "z": 10,
+      "category": "bottom"
+    },
+    {
+      "name": "Superman",
+      "x": 661,
+      "y": 1334,
+      "width": 1183,
+      "height": 332,
+      "z": 10,
+      "category": "bottom"
+    }
+  ]
+}

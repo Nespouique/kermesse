@@ -1,0 +1,13 @@
+# Output and caches
+.nitro/
+.output/
+.dist/
+.cache/
+.nuxt/
+node_modules/
+
+# Build artifacts
+coverage/
+
+# Generated assets
+public/.vite/

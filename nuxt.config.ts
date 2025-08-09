@@ -3,9 +3,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
-  css: [
-    '~/assets/main.css'
-  ],
+  css: ['~/assets/main.css'],
 
   modules: [
     '@nuxt/eslint',
@@ -13,13 +11,13 @@ export default defineNuxtConfig({
     '@nuxt/scripts',
     '@nuxt/test-utils',
     '@nuxt/ui',
-    '@nuxtjs/color-mode'
+    '@nuxtjs/color-mode',
   ],
 
   colorMode: {
-    classSuffix: '',          // pour avoir .dark/.light directement
-    preference: 'system',     // 'system' pour suivre le système, 'light' ou 'dark' pour forcer
-    fallback: 'light',        // si rien n'est trouvé
-    storageKey: 'nuxt-color-mode'
-  }
+    classSuffix: '', // pour avoir .dark/.light directement
+    preference: 'system', // 'system' pour suivre le système, 'light' ou 'dark' pour forcer
+    fallback: 'light', // si rien n'est trouvé
+    storageKey: 'nuxt-color-mode',
+  },
 })
