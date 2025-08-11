@@ -64,9 +64,8 @@
       <div class="text-center sm:text-left">
         <h1 class="font-bold mb-6 sm:mb-2 drop-shadow-lg text-5xl">Kermesse du Bébé</h1>
         <h2 class="text-xl font-medium mb-2">
-          Inspiré des kermesses bretonnes où les participants parient sur le poids du cochon.
+          En hommage aux kermesses bretonnes où les participants parient sur le poids du cochon.
         </h2>
-        <h2 class="text-xl font-medium">Que la tradition continue...</h2>
       </div>
     </div>
 
@@ -195,6 +194,17 @@
         </template>
       </UTabs>
     </div>
+    <div id="prizes-link" class="mt-8 text-center">
+      <UButton
+        variant="link"
+        color="neutral"
+        class="!underline underline-offset-2"
+        @click="showPrizes = true"
+      >
+        Voir les lots
+      </UButton>
+    </div>
+    <PrizesModal v-model="showPrizes" />
   </UContainer>
 </template>
 
@@ -204,6 +214,7 @@
   import TicketForm from '~/components/TicketForm.vue'
   import AvatarBuilder from '~/components/AvatarBuilder.vue'
   import BetsList from '~/components/BetsList.vue'
+  import PrizesModal from '~/components/PrizesModal.vue'
   import { useColorMode } from '@vueuse/core'
 
   const colorMode = useColorMode()
@@ -218,6 +229,7 @@
 
   const isMounted = ref(false)
   const showSuccessModal = ref(false)
+  const showPrizes = ref(false)
   watch(showSuccessModal, async (val) => {
     console.log('showSuccessModal ->', val)
     if (val) {

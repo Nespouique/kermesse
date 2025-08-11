@@ -20,3 +20,87 @@ html.dark .kermesse-bg {
 .bulle-bg-subtle {
   background: var(--ui-bg);
 }
+
+/* Mouvement holographique discret */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  25% {
+    background-position: 50% 100%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  75% {
+    background-position: 50% 0%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Balayage lumineux */
+@keyframes shimmer-sweep {
+  0% {
+    transform: translateX(-150%) skewX(-12deg);
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.45;
+  }
+  50% {
+    transform: translateX(150%) skewX(-12deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(150%) skewX(-12deg);
+    opacity: 0;
+  }
+}
+
+.prismatic-icon {
+  position: relative;
+  display: inline-block; /* permet la rotation */
+  transform-origin: center;
+  width: 1em;
+  height: 1em;
+
+  background: linear-gradient(
+    125deg,
+    #e5e4e2 0%,
+    #d4af37 14%,
+    #ff4fd8 28%,
+    #32e1ff 42%,
+    #c8ff3d 56%,
+    #e5e4e2 70%,
+    #bcd7ff 85%,
+    #e5e4e2 100%
+  );
+  background-size: 500% 500%;
+
+  /* Ton animation couleurs inchangée */
+  animation: gradient-shift 3s ease-in-out infinite;
+
+  -webkit-mask: url('/icons/sparkles.svg') center / contain no-repeat;
+  mask: url('/icons/sparkles.svg') center / contain no-repeat;
+
+  filter: drop-shadow(0 0 0.35px rgba(0, 0, 0, 0.45));
+}
+
+/* Balayage lumineux discret mais net */
+.prismatic-icon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.95) 50%,
+    transparent 60%
+  );
+  mix-blend-mode: screen;
+  animation: shimmer-sweep 1s ease-in-out infinite;
+  -webkit-mask: inherit;
+  mask: inherit;
+}
