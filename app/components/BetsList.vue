@@ -98,6 +98,8 @@
   const loaded = ref(false)
   const error = ref<string | null>(null)
 
+  const emit = defineEmits<{ (e: 'loaded'): void }>()
+
   const { $supabase } = useNuxtApp()
   if (!$supabase) {
     // Evite boucle de chargement si supabase non configuré
@@ -124,6 +126,7 @@
     } finally {
       loading.value = false
       loaded.value = true
+      emit('loaded')
     }
   }
 

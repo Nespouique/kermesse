@@ -2,7 +2,7 @@
   <ClientOnly>
     <UModal
       v-model:open="internalOpen"
-      title="Lots en jeu ! 🎁"
+      title="Lots en jeu !"
       :ui="{
         header: 'flex justify-center',
         title: 'w-full text-center text-3xl font-extrabold',
@@ -12,12 +12,6 @@
       <template #body>
         <div class="space-y-6 py-4 px-2">
           <ul class="space-y-4 text-sm list-none pb-4">
-            <li class="flex gap-3 items-center">
-              <UIcon name="i-lucide-sparkles" mode="css" class="prismatic-icon shrink-0 mt-0.5" />
-
-              <span>Prix tout est bon dans le cochon !</span>
-            </li>
-
             <li class="flex gap-3 items-center">
               <UIcon name="i-lucide-medal" class="text-yellow-500 shrink-0 mt-0.5" />
               <span>1ère place : Repas au restaurant</span>
@@ -35,6 +29,13 @@
                 class="text-amber-800 dark:text-amber-600 shrink-0 mt-0.5"
               />
               <span>3ème place : Terrines bretonnes</span>
+            </li>
+            <li class="flex gap-3 items-center">
+              <UIcon name="i-lucide-sparkles" mode="css" class="prismatic-icon shrink-0 mt-0.5" />
+              <span>
+                Bonus tout est bon dans le cochon (date, sexe, poids corrects) : Kit de palets
+                personnalisé
+              </span>
             </li>
           </ul>
           <details class="text-xs text-[var(--ui-text-dimmed)] group">

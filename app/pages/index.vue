@@ -4,7 +4,7 @@
     <ClientOnly>
       <UModal
         v-model:open="showSuccessModal"
-        title="Félicitations ! 🎉"
+        title="Félicitations !"
         :close="false"
         :ui="{
           header: 'flex justify-center',
@@ -189,7 +189,7 @@
         <!-- Deuxième tab : Voir les paris -->
         <template #paris>
           <div id="bets-section" class="bg-[var(--ui-bg)] rounded-none shadow-md px-4 py-6">
-            <BetsList />
+            <BetsList @loaded="onBetsLoaded" />
           </div>
         </template>
       </UTabs>
@@ -345,25 +345,51 @@
     })
   })
 
-  // Watcher pour le scroll automatique lors du changement de tab
+  // Scroll automatique lors du changement de tab – attente d'un layout stable pour éviter l'effet "ascenseur"
+  function scrollTabIntoView(tab: string) {
+    const targetId =
+      tab === 'paris' ? 'bets-section' : tab === 'pari' ? 'stepper-section' : 'tabs-section'
+    const isDynamic = tab === 'paris'
+    const performScroll = () => {
+      const el = document.getElementById(targetId) || document.getElementById('tabs-section')
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+      window.scrollTo({ top: rect.top + scrollTop, behavior: 'smooth' })
+    }
+
+    // Pour le tab dynamique, attendre que la hauteur du document se stabilise (3 frames consécutives identiques)
+    if (isDynamic) {
+      let lastHeight = document.body.scrollHeight
+      let stableFrames = 0
+      let frames = 0
+      const maxFrames = 40 // ~2/3s à 60fps max
+      const check = () => {
+        frames++
+        const h = document.body.scrollHeight
+        if (h === lastHeight) {
+          stableFrames++
+        } else {
+          stableFrames = 0
+          lastHeight = h
+        }
+        if (stableFrames >= 3 || frames >= maxFrames) {
+          performScroll()
+        } else {
+          requestAnimationFrame(check)
+        }
+      }
+      // Laisser la transition des tabs commencer avant le suivi
+      nextTick(() => requestAnimationFrame(check))
+    } else {
+      // Cas simple
+      nextTick(() => setTimeout(performScroll, 30))
+    }
+  }
+
   watch(activeTab, (newTab) => {
     if (!newTab) return
-    nextTick(() => {
-      setTimeout(() => {
-        const targetId =
-          newTab === 'paris'
-            ? 'bets-section'
-            : newTab === 'pari'
-              ? 'stepper-section'
-              : 'tabs-section'
-        const el = document.getElementById(targetId) || document.getElementById('tabs-section')
-        if (el) {
-          const rect = el.getBoundingClientRect()
-          const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-          ;(window as Window).scrollTo({ top: rect.top + scrollTop, behavior: 'smooth' })
-        }
-      }, 60)
-    })
+    scrollTabIntoView(newTab)
   })
 
   // Computed pour la validation des étapes
@@ -662,5 +688,18 @@
     } catch (e) {
       console.warn('Confetti non chargé', e)
     }
+  }
+
+  function onBetsLoaded() {
+    // Scroll uniquement si l'onglet paris est actif
+    if (activeTab.value !== 'paris') return
+    const el = document.getElementById('bets-section')
+    if (!el) return
+    // Utiliser requestAnimationFrame pour s'assurer que le layout final est appliqué
+    requestAnimationFrame(() => {
+      const rect = el.getBoundingClientRect()
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+      window.scrollTo({ top: rect.top + scrollTop, behavior: 'smooth' })
+    })
   }
 </script>
