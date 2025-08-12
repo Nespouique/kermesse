@@ -1,18 +1,19 @@
 {
-  // https://nuxt.com/docs/guide/concepts/typescript
-  "files": [],
-  "references": [
-    {
-      "path": "./.nuxt/tsconfig.app.json"
-    },
-    {
-      "path": "./.nuxt/tsconfig.server.json"
-    },
-    {
-      "path": "./.nuxt/tsconfig.shared.json"
-    },
-    {
-      "path": "./.nuxt/tsconfig.node.json"
+  "extends": "./.nuxt/tsconfig.json",
+  "compilerOptions": {
+    "resolveJsonModule": true,
+    "types": ["@types/node", "nuxt"],
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "#app": ["node_modules/nuxt/dist/app"],
+      "#app/*": ["node_modules/nuxt/dist/app/*"],
+      "#imports": [".nuxt/imports"],
+      "#build": [".nuxt"],
+      "#build/*": [".nuxt/*"]
     }
-  ]
+  },
+  "include": ["app/**/*.ts", "app/**/*.vue", "types/**/*.d.ts", "env.d.ts"]
 }

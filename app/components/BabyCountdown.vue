@@ -3,11 +3,10 @@
     <template #header>
       <div class="flex items-center justify-center gap-2 text-center w-full">
         <Clock4 class="w-5 h-5 sm:w-7 sm:h-7" />
-        <span v-if="isMobile" class="text-lg sm:text-3xl font-semibold">
-          Arrivée prévue le 22 janvier
-        </span>
-        <span v-else class="text-lg sm:text-3xl font-semibold">
-          Livraison du colis prévue le 22 janvier 2026
+        <!-- Utilise uniquement les classes responsive pour éviter un mismatch SSR/CSR -->
+        <span class="text-lg sm:text-3xl font-semibold">
+          <span class="sm:hidden">Arrivée prévue le 22 janvier</span>
+          <span class="hidden sm:inline">Livraison du colis prévue le 22 janvier 2026</span>
         </span>
       </div>
     </template>
@@ -51,8 +50,6 @@
 <script setup lang="ts">
   import { ref, onMounted, onUnmounted } from 'vue'
   import { Clock4 } from 'lucide-vue-next'
-  import { UCard, USkeleton } from '#components'
-  import { useMobile } from '~/composables/useBreakpoints'
 
   const targetDate = new Date('2026-01-22T00:00:00')
   const countdown = ref({ days: 0, hours: 0, minutes: 0 })
@@ -80,5 +77,5 @@
   })
   onUnmounted(() => clearInterval(interval))
 
-  const { isMobile } = useMobile()
+  // Plus de logique conditionnelle côté rendu pour éviter mismatch hydration
 </script>

@@ -43,7 +43,7 @@
         unchecked-icon="i-lucide-sun"
         checked-icon="i-lucide-moon"
         @update:model-value="
-          (val) => {
+          (val: boolean) => {
             if (isMounted) isDark = val
           }
         "
@@ -210,6 +210,8 @@
 
 <script setup lang="ts">
   import { computed, ref, onMounted, watch, nextTick } from 'vue'
+  import { useNuxtApp } from '#app'
+  import { useToast } from '#imports'
   import BabyCountdown from '~/components/BabyCountdown.vue'
   import TicketForm from '~/components/TicketForm.vue'
   import AvatarBuilder from '~/components/AvatarBuilder.vue'
@@ -230,7 +232,7 @@
   const isMounted = ref(false)
   const showSuccessModal = ref(false)
   const showPrizes = ref(false)
-  watch(showSuccessModal, async (val) => {
+  watch(showSuccessModal, async (val: boolean) => {
     console.log('showSuccessModal ->', val)
     if (val) {
       await nextTick()
@@ -536,7 +538,10 @@
 
     console.log('Pari final soumis:', finalData)
     // Intégration Supabase
-    const { $supabase } = useNuxtApp()
+    type SupabaseClient = import('@supabase/supabase-js').SupabaseClient
+    const { $supabase } = useNuxtApp() as {
+      $supabase: SupabaseClient
+    }
     if (!$supabase) {
       toast.add({
         title: 'Configuration',
@@ -675,7 +680,6 @@
   async function triggerConfetti() {
     if (typeof window === 'undefined') return
     try {
-      // @ts-expect-error Module déclaré via types/canvas-confetti.d.ts
       const { default: confetti } = await import('canvas-confetti')
       const fire = (particleCount: number, spread: number, delay = 0) =>
         setTimeout(() => confetti({ particleCount, spread, origin: { y: 0.5 } }), delay)

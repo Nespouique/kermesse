@@ -1,14 +1,25 @@
 <template>
   <div v-if="loaded" class="space-y-4">
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between gap-4">
       <h3 class="text-lg font-semibold">Paris enregistrés</h3>
-      <UButton
-        color="neutral"
-        variant="soft"
-        icon="i-lucide-refresh-cw"
-        :loading="loading"
-        @click="fetchBets"
-      />
+      <div class="flex items-center gap-2">
+        <UButton
+          color="neutral"
+          variant="soft"
+          icon="i-lucide-chart-line"
+          :disabled="loading || bets.length === 0"
+          aria-label="Voir les graphiques"
+          @click="showAnalytics = true"
+        />
+        <UButton
+          color="neutral"
+          variant="soft"
+          icon="i-lucide-refresh-cw"
+          :loading="loading"
+          aria-label="Rafraîchir"
+          @click="fetchBets"
+        />
+      </div>
     </div>
     <div v-if="error" class="text-red-500 text-sm">Erreur: {{ error }}</div>
     <div v-if="bets.length === 0 && !error" class="text-sm text-[var(--ui-text-dimmed)]">
@@ -54,11 +65,15 @@
       <span>Chargement…</span>
     </div>
   </div>
+  <ClientOnly>
+    <BetsAnalyticsModal v-if="showAnalytics" v-model="showAnalytics" :bets="bets" />
+  </ClientOnly>
 </template>
 
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
-  import rawStructure from '~/../public/PigGenerator/structure.json'
+  import { useNuxtApp } from '#app'
+  import BetsAnalyticsModal from './BetsAnalyticsModal.vue'
 
   interface LayerMeta {
     name: string
@@ -76,7 +91,9 @@
     layers: LayerMeta[]
   }
 
-  const structure = rawStructure as StructureJson
+  // Chargement du JSON placé dans /public (non importable directement via bundler)
+  // NOTE: /public est servi à la racine, donc l'URL est /PigGenerator/structure.json
+  const structure = await $fetch<StructureJson>('/PigGenerator/structure.json')
 
   interface BetRow {
     id: string
@@ -94,13 +111,17 @@
   }
 
   const bets = ref<BetRow[]>([])
+  const showAnalytics = ref(false)
   const loading = ref(false)
   const loaded = ref(false)
   const error = ref<string | null>(null)
 
   const emit = defineEmits<{ (e: 'loaded'): void }>()
 
-  const { $supabase } = useNuxtApp()
+  type SupabaseClient = import('@supabase/supabase-js').SupabaseClient
+  const { $supabase } = useNuxtApp() as {
+    $supabase: SupabaseClient
+  }
   if (!$supabase) {
     // Evite boucle de chargement si supabase non configuré
     loaded.value = true
