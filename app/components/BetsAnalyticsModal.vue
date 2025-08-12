@@ -14,52 +14,54 @@
       class="sm:max-w-5xl"
     >
       <template #body>
-        <div class="p-4 sm:p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+        <div class="p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
           <div v-if="bets.length === 0" class="text-sm">Rien à afficher pour le moment.</div>
           <div v-else class="space-y-10">
-            <!-- Pie Sexe -->
-            <section>
-              <h3 class="text-base font-semibold mb-2">Répartition garçon / fille</h3>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                <div class="md:col-span-1 flex justify-center">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 min-h-0">
+              <!-- Pie Sexe -->
+              <section class="grid grid-rows-[auto,1fr,auto] h-[320px]">
+                <h3 class="text-base font-semibold mb-2">Répartition garçon / fille</h3>
+
+                <div class="min-h-0">
                   <ClientOnly>
                     <PieChart :male="male" :female="female" />
                   </ClientOnly>
                 </div>
-                <div class="md:col-span-2 text-xs leading-relaxed">
-                  <p>
-                    Garçon:
-                    <strong>{{ male }}</strong>
-                    ({{ malePct.toFixed(1) }}%)
-                    <br />
-                    Fille:
-                    <strong>{{ female }}</strong>
-                    ({{ femalePct.toFixed(1) }}%)
-                  </p>
+                <p class="mt-2 text-xs text-center">
+                  Garçon:
+                  <strong>{{ male }}</strong>
+                  ({{ malePct.toFixed(1) }}%) ; Fille:
+                  <strong>{{ female }}</strong>
+                  ({{ femalePct.toFixed(1) }}%)
+                </p>
+              </section>
+
+              <!-- Line Poids -->
+              <section class="grid grid-rows-[auto,1fr,auto] h-[320px]">
+                <h3 class="text-base font-semibold mb-2">Distribution des poids (kg)</h3>
+
+                <div class="min-h-0">
+                  <ClientOnly>
+                    <LineWeightChart :weights-counts="weightsCountsFullRange" />
+                  </ClientOnly>
                 </div>
-              </div>
-            </section>
+                <p class="mt-2 text-xs text-[var(--ui-text-dimmed)]">
+                  Chaque point représente un poids voté (kg) et le nombre de votants.
+                </p>
+              </section>
 
-            <!-- Line Poids -->
-            <section>
-              <h3 class="text-base font-semibold mb-2">Distribution des poids (kg)</h3>
-              <ClientOnly>
-                <LineWeightChart :weights-counts="weightsCountsFullRange" />
-              </ClientOnly>
-              <p class="mt-2 text-xs text-[var(--ui-text-dimmed)]">
-                Chaque point représente un poids voté (kg) et le nombre de votants.
-              </p>
-            </section>
-
-            <!-- Calendrier Dates -->
-            <section>
-              <h3 class="text-base font-semibold mb-4">Dates de naissance estimées (Déc / Jan)</h3>
-              <CalendarVotes :date-map="dateMap" :all-dates="allCalendarDates" />
-              <p class="mt-2 text-xs text-[var(--ui-text-dimmed)]">
-                Une pastille = un pari sur ce jour. Si le nombre est élevé, un badge +n résume les
-                pastilles supplémentaires.
-              </p>
-            </section>
+              <!-- Calendrier Dates -->
+              <section class="md:col-span-2">
+                <h3 class="text-base font-semibold mb-2">
+                  Dates de naissance estimées (Déc / Jan)
+                </h3>
+                <CalendarVotes :date-map="dateMap" :all-dates="allCalendarDates" />
+                <p class="mt-2 text-xs text-[var(--ui-text-dimmed)]">
+                  Une pastille = un pari sur ce jour. Si le nombre est élevé, un badge +n résume les
+                  pastilles supplémentaires.
+                </p>
+              </section>
+            </div>
           </div>
         </div>
       </template>

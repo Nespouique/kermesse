@@ -1,8 +1,11 @@
 <template>
-  <div class="w-full overflow-x-auto">
-    <div class="width-full">
-      <canvas ref="canvasEl" aria-label="Distribution des poids" role="img"></canvas>
-    </div>
+  <div class="relative w-full h-full min-h-0">
+    <canvas
+      ref="canvasEl"
+      class="w-full h-full block"
+      aria-label="Distribution des poids"
+      role="img"
+    ></canvas>
   </div>
 </template>
 <script setup lang="ts">
@@ -17,6 +20,9 @@
 
   const canvasEl = ref<HTMLCanvasElement | null>(null)
   let chart: Chart | null = null
+
+  const uiText = getComputedStyle(document.documentElement).getPropertyValue('--ui-text')
+  console.log('uiText', uiText)
 
   function render() {
     if (!canvasEl.value) return
@@ -34,8 +40,8 @@
           {
             label: 'Nombre de votants',
             data,
-            borderColor: '#6366f1',
-            backgroundColor: 'rgba(99,102,241,0.15)',
+            borderColor: 'rgba(99, 48, 138)',
+            backgroundColor: 'rgba(99, 48, 138,0.15)',
             tension: 0.25,
             fill: true,
             pointRadius: 4,
@@ -49,7 +55,7 @@
         scales: {
           x: { title: { display: true, text: 'Poids (kg)' } },
           y: {
-            title: { display: false, text: 'Votants' },
+            title: { display: true, text: 'Votants' },
             beginAtZero: true,
             ticks: { precision: 0 },
           },

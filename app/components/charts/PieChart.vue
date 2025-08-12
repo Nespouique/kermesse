@@ -1,6 +1,11 @@
 <template>
-  <div class="w-52 h-52">
-    <canvas ref="canvasEl" aria-label="Répartition garçon fille" role="img"></canvas>
+  <div class="relative w-full h-full min-h-0">
+    <canvas
+      ref="canvasEl"
+      class="w-full h-full block"
+      aria-label="Répartition garçon fille"
+      role="img"
+    ></canvas>
   </div>
 </template>
 <script setup lang="ts">
@@ -31,6 +36,7 @@
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: { position: 'bottom' },
           tooltip: {
