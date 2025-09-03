@@ -108,6 +108,14 @@
     title: string
   }
 
+  function dateKeyLocal(date: Date) {
+    // Utilise les composantes locales pour éviter les décalages dus au passage en UTC avec toISOString()
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }
+
   function buildMonthCells(dates: Date[]): CalendarCell[] {
     if (!dates.length) return [] as CalendarCell[]
     // First day of month weekday (Mon=1 .. Sun=7) using getDay (Sun=0)
@@ -130,7 +138,7 @@
       })
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(first.getFullYear(), first.getMonth(), day)
-      const key = date.toISOString().slice(0, 10)
+      const key = dateKeyLocal(date)
       const bets = props.dateMap.get(key) || []
       const betsLimited = bets.slice(0, 6)
       const extraCount = bets.length > 6 ? bets.length - 6 : 0

@@ -157,23 +157,41 @@
   const baseLayers = structure.layers.filter((l) => l.category === 'base')
 
   function avatarLayers(b: BetRow) {
-    // We'll scale down to 64px width relative to original base width
+    // Échelle mini (largeur 64px)
     const targetWidth = 64
     const origWidth = structure.base.width
     const scale = targetWidth / origWidth
 
     const layers: LayerMeta[] = []
-    function pushIf(name: string | null) {
+    const pushed = new Set<string>()
+
+    function push(meta: LayerMeta | undefined) {
+      if (!meta) return
+      if (pushed.has(meta.name)) return
+      pushed.add(meta.name)
+      layers.push(meta)
+    }
+
+    function addWithCompanion(name: string | null) {
       if (!name) return
       const meta = structure.layers.find((l) => l.name === name)
       if (!meta) return
-      layers.push(meta)
+      push(meta)
+      if (meta.goesWith) {
+        const companion = structure.layers.find((l) => l.name === meta.goesWith)
+        push(companion)
+      }
     }
-    // Always base layers
-    layers.push(...baseLayers)
-    pushIf(b.middle_layer)
-    pushIf(b.top_layer)
-    pushIf(b.bottom_layer)
+
+    // Base
+    baseLayers.forEach((l) => push(l))
+    // Catégories sélectionnées (ordre similaire à l'affichage)
+    addWithCompanion(b.middle_layer)
+    addWithCompanion(b.top_layer)
+    addWithCompanion(b.bottom_layer)
+
+    // Tri par z pour un empilement cohérent
+    layers.sort((a, b) => a.z - b.z)
 
     return layers.map((l) => ({
       key: l.name,
