@@ -15,5 +15,13 @@
       "#build/*": [".nuxt/*"]
     }
   },
-  "include": ["app/**/*.ts", "app/**/*.vue", "types/**/*.d.ts", "env.d.ts"]
+  "include": [
+    "app/**/*.ts",
+    "app/**/*.vue",
+    "types/**/*.d.ts",
+    "env.d.ts",
+    "server/**/*.ts",
+    "*.ts",
+    "*.mjs"
+  ]
 }

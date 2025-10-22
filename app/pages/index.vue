@@ -656,6 +656,107 @@
         })
         if (aErr) throw aErr
 
+        // Construire les layers de l'avatar pour l'email
+        const structure = await $fetch<{
+          base: { width: number; height: number }
+          layers: Array<{
+            name: string
+            x: number
+            y: number
+            width: number
+            height: number
+            z: number
+            category: 'base' | 'top' | 'middle' | 'bottom'
+            goesWith?: string
+          }>
+        }>('/PigGenerator/structure.json')
+
+        const targetWidth = 120 // Taille pour l'email
+        const scale = targetWidth / structure.base.width
+        const layers: Array<{
+          name: string
+          x: number
+          y: number
+          width: number
+          height: number
+          z: number
+          category: 'base' | 'top' | 'middle' | 'bottom'
+          goesWith?: string
+        }> = []
+        const pushed = new Set<string>()
+
+        function pushLayer(layerName: string | null) {
+          if (!layerName) return
+          const meta = structure.layers.find((l) => l.name === layerName)
+          if (!meta || pushed.has(meta.name)) return
+          pushed.add(meta.name)
+          layers.push(meta)
+          if (meta.goesWith) {
+            const companion = structure.layers.find((l) => l.name === meta.goesWith)
+            if (companion && !pushed.has(companion.name)) {
+              pushed.add(companion.name)
+              layers.push(companion)
+            }
+          }
+        }
+
+        // Base layers
+        structure.layers
+          .filter((l) => l.category === 'base')
+          .forEach((l) => {
+            if (!pushed.has(l.name)) {
+              pushed.add(l.name)
+              layers.push(l)
+            }
+          })
+
+        // Selected layers
+        pushLayer(middle?.name || null)
+        pushLayer(top?.name || null)
+        pushLayer(bottom?.name || null)
+
+        layers.sort((a, b) => a.z - b.z)
+
+        const avatarLayers = layers.map((l) => ({
+          key: l.name,
+          src: `/PigGenerator/${
+            l.category === 'base'
+              ? 'Base'
+              : l.category === 'top'
+                ? 'Top'
+                : l.category === 'middle'
+                  ? 'Middle'
+                  : 'Bottom'
+          }/${l.name}.svg`,
+          width: l.width * scale,
+          height: l.height * scale,
+          left: l.x * scale - (l.width * scale) / 2,
+          top: l.y * scale - (l.height * scale) / 2,
+          z: l.z,
+        }))
+
+        // Envoi de la notification par email
+        try {
+          await $fetch('/api/send-notification', {
+            method: 'POST',
+            body: {
+              participantName: `${normalizedFirst} ${normalizedLast}`,
+              participantEmail: participantEmail,
+              betDetails: {
+                isMale: betData.value.isMale,
+                estimatedDate: dateISO,
+                weight: betData.value.weight,
+                firstName: betData.value.firstName || null,
+              },
+              avatarLayers,
+            },
+          })
+          console.log('Notification email envoyée avec succès')
+        } catch (emailErr) {
+          console.error("Erreur lors de l'envoi de la notification:", emailErr)
+          // On ne bloque pas le flow si l'email échoue
+        }
+
         showSuccessModal.value = true
         resetForm()
       } catch (err) {
