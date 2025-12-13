@@ -21,12 +21,17 @@
         "SUPABASE_ACCESS_TOKEN": "${input:supabase-access-token}"
       }
     },
-    "nuxt": {
-      "url": "https://mcp.nuxt.com/sse"
+    "nuxt-ui": {
+      "type": "http",
+      "url": "https://ui.nuxt.com/mcp"
     },
     "context7": {
       "type": "http",
       "url": "https://mcp.context7.com/mcp"
+    },
+    "lucide-icons": {
+      "command": "npx",
+      "args": ["lucide-icons-mcp", "--stdio"]
     }
   }
 }

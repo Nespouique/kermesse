@@ -51,6 +51,7 @@ Variables d'environnement à définir (Vercel Project Settings > Environment Var
 ```
 NUXT_PUBLIC_SUPABASE_URL=https://wyxmlrjafkmkvzrtxeiy.supabase.co
 NUXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5eG1scmphZmtta3Z6cnR4ZWl5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyMTI1MzUsImV4cCI6MjA2ODc4ODUzNX0._jXKEJYY5sXF6cElJtz3UKh6tMcrCIRhbiJfLjzTnS0
+NUXT_ADMIN_PASSWORD=admin
 ```
 
 En local, copier `.env.example` en `.env.local` et ajuster si besoin.

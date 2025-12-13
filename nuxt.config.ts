@@ -9,6 +9,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     // Variables serveur (privées, non exposées au client)
+    adminPassword: process.env.NUXT_ADMIN_PASSWORD || 'admin',
     gmailUser: process.env.NUXT_GMAIL_USER || '',
     gmailAppPassword: process.env.NUXT_GMAIL_APP_PASSWORD || '',
     notificationEmail: process.env.NUXT_NOTIFICATION_EMAIL || '',

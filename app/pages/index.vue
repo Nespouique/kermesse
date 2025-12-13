@@ -1,5 +1,5 @@
 <template>
-  <UContainer>
+  <UContainer v-if="isReady">
     <!-- Modal de succès après enregistrement du pari -->
     <ClientOnly>
       <UModal
@@ -210,7 +210,7 @@
 
 <script setup lang="ts">
   import { computed, ref, onMounted, watch, nextTick } from 'vue'
-  import { useNuxtApp } from '#app'
+  import { useNuxtApp, useState } from '#app'
   import { useToast } from '#imports'
   import BabyCountdown from '~/components/BabyCountdown.vue'
   import TicketForm from '~/components/TicketForm.vue'
@@ -218,6 +218,10 @@
   import BetsList from '~/components/BetsList.vue'
   import PrizesModal from '~/components/PrizesModal.vue'
   import { useColorMode } from '@vueuse/core'
+
+  // Wait for birth check to complete before rendering
+  const birthCheckDone = useState<boolean>('birthCheckDone', () => false)
+  const isReady = computed(() => birthCheckDone.value)
 
   const colorMode = useColorMode()
   const isDark = computed({
