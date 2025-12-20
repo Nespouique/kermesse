@@ -1,95 +1,95 @@
-import nodemailer from 'nodemailer'
-import { defineEventHandler, readBody, createError } from 'h3'
-import { createClient } from '@supabase/supabase-js'
+import nodemailer from "nodemailer";
+import { defineEventHandler, readBody, createError } from "h3";
+import { createClient } from "@supabase/supabase-js";
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
-  const { testMode, babyName, sex } = body
+  const body = await readBody(event);
+  const { testMode, babyName, sex } = body;
 
-  const config = useRuntimeConfig()
-  const gmailUser = config.gmailUser
-  const gmailAppPassword = config.gmailAppPassword
+  const config = useRuntimeConfig();
+  const gmailUser = config.gmailUser;
+  const gmailAppPassword = config.gmailAppPassword;
 
   if (!gmailUser || !gmailAppPassword) {
     throw createError({
       statusCode: 500,
-      message: 'Configuration email manquante',
-    })
+      message: "Configuration email manquante",
+    });
   }
 
   // Créer le client Supabase côté serveur
-  const supabaseUrl = config.public.supabaseUrl as string
-  const supabaseKey = config.public.supabaseAnonKey as string
+  const supabaseUrl = config.public.supabaseUrl as string;
+  const supabaseKey = config.public.supabaseAnonKey as string;
 
   if (!supabaseUrl || !supabaseKey) {
     throw createError({
       statusCode: 500,
-      message: 'Configuration Supabase manquante',
-    })
+      message: "Configuration Supabase manquante",
+    });
   }
 
-  const supabase = createClient(supabaseUrl, supabaseKey)
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
     // Récupérer les emails des participants
-    let recipientEmails: string[] = []
+    let recipientEmails: string[] = [];
 
     if (testMode) {
       // Mode test : seulement 2 adresses
-      recipientEmails = ['caro.sacre@gmail.com', 'hallais.elliot@gmail.com']
+      recipientEmails = ["caro.sacre@gmail.com", "hallais.elliot@gmail.com"];
     } else {
       // Mode production : tous les emails uniques des parieurs
       const { data: bets, error: fetchError } = await supabase
-        .from('bets')
-        .select('email')
-        .not('email', 'is', null)
+        .from("bets")
+        .select("email")
+        .not("email", "is", null);
 
-      if (fetchError) throw fetchError
+      if (fetchError) throw fetchError;
 
       // Extraire les emails uniques
-      const uniqueEmails = new Set<string>()
+      const uniqueEmails = new Set<string>();
       for (const bet of bets || []) {
-        if (bet.email && typeof bet.email === 'string' && bet.email.trim()) {
-          uniqueEmails.add(bet.email.trim().toLowerCase())
+        if (bet.email && typeof bet.email === "string" && bet.email.trim()) {
+          uniqueEmails.add(bet.email.trim().toLowerCase());
         }
       }
-      recipientEmails = Array.from(uniqueEmails)
+      recipientEmails = Array.from(uniqueEmails);
     }
 
     if (recipientEmails.length === 0) {
       throw createError({
         statusCode: 400,
-        message: 'Aucun destinataire trouvé',
-      })
+        message: "Aucun destinataire trouvé",
+      });
     }
 
     // Créer le transporteur nodemailer
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      service: "gmail",
       auth: {
         user: gmailUser,
         pass: gmailAppPassword,
       },
-    })
+    });
 
     // Formater les informations
-    const sexeLabel = sex === 'M' ? 'garçon' : 'fille'
+    const sexeLabel = sex === "M" ? "garçon" : "fille";
 
     // Couleurs selon le sexe
-    const primaryColor = sex === 'M' ? '#3B82F6' : '#EC4899'
-    const lightColor = sex === 'M' ? '#DBEAFE' : '#FCE7F3'
+    const primaryColor = sex === "M" ? "#3B82F6" : "#EC4899";
+    const lightColor = sex === "M" ? "#DBEAFE" : "#FCE7F3";
 
     // Image du cochon selon le sexe (hébergée sur le site)
     const pigImageUrl =
-      sex === 'M'
-        ? 'https://kermesse.hallais.bzh/png/Gar%C3%A7on.png'
-        : 'https://kermesse.hallais.bzh/png/Fille.png'
+      sex === "M"
+        ? "https://kermesse.hallais.bzh/png/Gar%C3%A7on.png"
+        : "https://kermesse.hallais.bzh/png/Fille.png";
 
     const pigAvatarHTML = `
       <div style="text-align: center; margin: 15px 0;">
         <img src="${pigImageUrl}" alt="Cochon festif" style="width: 180px; height: auto;" />
       </div>
-    `
+    `;
 
     // Contenu de l'email
     const htmlContent = `
@@ -105,8 +105,8 @@ export default defineEventHandler(async (event) => {
             
             <!-- Header festif -->
             <div style="background: linear-gradient(135deg, ${primaryColor} 0%, ${
-              sex === 'M' ? '#1D4ED8' : '#DB2777'
-            } 100%); padding: 30px 20px; text-align: center;">
+      sex === "M" ? "#1D4ED8" : "#DB2777"
+    } 100%); padding: 30px 20px; text-align: center;">
               <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">
                 🎉 Le petit cochon est né !
               </h1>
@@ -126,7 +126,7 @@ export default defineEventHandler(async (event) => {
                   Nous avons la joie de vous annoncer la naissance de
                 </p>
                 <h2 style="font-size: 40px; color: ${primaryColor}; margin: 5px 0 20px 0; font-weight: 700;">
-                  ${babyName || 'Notre bébé'}
+                  ${babyName || "Notre bébé"}
                 </h2>
               </div>
 
@@ -164,13 +164,13 @@ export default defineEventHandler(async (event) => {
         </div>
       </body>
       </html>
-    `
+    `;
 
     const textContent = `
-🎉 ${babyName || 'Bébé'} est arrivé${sex === 'F' ? 'e' : ''} ! 🎉
+🎉 ${babyName || "Bébé"} est arrivé${sex === "F" ? "e" : ""} ! 🎉
 
-Nous avons la joie de vous annoncer la naissance de ${babyName || 'notre bébé'}.
-C'est un${sex === 'F' ? 'e' : ''} magnifique ${sexeLabel} !
+Nous avons la joie de vous annoncer la naissance de ${babyName || "notre bébé"}.
+C'est un${sex === "F" ? "e" : ""} magnifique ${sexeLabel} !
 
 🏆 Et les résultats du concours ?
 
@@ -184,30 +184,30 @@ Caroline & Elliot
 
 ---
 Ce message a été envoyé automatiquement depuis la Kermesse du Bébé
-    `.trim()
+    `.trim();
 
     // Envoyer l'email à chaque destinataire (en BCC pour la confidentialité)
     const mailOptions = {
       from: `"Kermesse du Bébé" <${gmailUser}>`,
-      bcc: recipientEmails.join(', '), // BCC pour ne pas exposer les emails des autres
+      bcc: recipientEmails.join(", "), // BCC pour ne pas exposer les emails des autres
       subject: `Le petit cochon est arrivé ! Découvrez les résultats de la Kermesse !`,
       html: htmlContent,
       text: textContent,
-    }
+    };
 
-    const info = await transporter.sendMail(mailOptions)
+    const info = await transporter.sendMail(mailOptions);
 
     return {
       success: true,
       messageId: info.messageId,
       recipientCount: recipientEmails.length,
       testMode,
-    }
+    };
   } catch (error) {
-    console.error("Erreur lors de l'envoi de l'email d'annonce:", error)
+    console.error("Erreur lors de l'envoi de l'email d'annonce:", error);
     throw createError({
       statusCode: 500,
       message: "Erreur lors de l'envoi de l'annonce de naissance",
-    })
+    });
   }
-})
+});
