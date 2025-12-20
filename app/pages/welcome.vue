@@ -382,6 +382,11 @@
         }"
       >
         <template #body>
+          <!-- Message d'aide pour le scroll sur mobile -->
+          <p class="text-sm text-center text-[var(--ui-text-dimmed)] mb-3 sm:hidden">
+            <UIcon name="i-lucide-move-horizontal" class="inline-block mr-1" />
+            Glissez vers la droite pour voir les rangs par catégorie
+          </p>
           <div class="max-h-[60vh] overflow-y-auto">
             <UTable
               v-model:sorting="tableSorting"
