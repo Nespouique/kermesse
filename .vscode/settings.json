@@ -7,7 +7,7 @@
   "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
   "[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
   "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
-  "[html]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[html]": { "editor.defaultFormatter": "vscode.html-language-features" },
   "[css]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
 
   // Only format when a Prettier config exists (we added one)

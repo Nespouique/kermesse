@@ -104,6 +104,146 @@
             </div>
           </UCard>
 
+          <!-- Section Annonce de Naissance -->
+          <UCard v-if="babyConfig.is_born">
+            <template #header>
+              <div class="flex items-center gap-3">
+                <div
+                  class="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center"
+                >
+                  <UIcon name="i-lucide-baby" class="text-white text-lg" />
+                </div>
+                <div>
+                  <h2 class="text-xl font-semibold">🎉 Annonce de naissance</h2>
+                  <p class="text-sm text-[var(--ui-text-dimmed)]">
+                    Informez les participants de l'arrivée du bébé
+                  </p>
+                </div>
+              </div>
+            </template>
+
+            <div class="space-y-4">
+              <UAlert
+                color="primary"
+                variant="soft"
+                title="Information"
+                description="Cette fonctionnalité envoie un email à tous les participants pour leur annoncer la naissance et les inviter à consulter le classement."
+                icon="i-lucide-info"
+              />
+
+              <!-- Aperçu des infos qui seront envoyées -->
+              <div
+                class="bg-[var(--ui-bg-elevated)] rounded-lg p-4 border border-[var(--ui-border)]"
+              >
+                <h4 class="font-medium mb-3">📋 Informations incluses dans l'email :</h4>
+                <ul class="text-sm text-[var(--ui-text-dimmed)] space-y-1">
+                  <li>
+                    <strong>Prénom :</strong>
+                    {{ babyConfig.baby_name || 'Non renseigné' }}
+                  </li>
+                  <li>
+                    <strong>Sexe :</strong>
+                    {{ babyConfig.sex === 'M' ? 'Garçon 👦' : 'Fille 👧' }}
+                  </li>
+                  <li>
+                    <strong>Date :</strong>
+                    {{ formatBirthDate }}
+                  </li>
+                  <li>
+                    <strong>Heure :</strong>
+                    {{ babyConfig.birth_time || 'Non renseignée' }}
+                  </li>
+                  <li>
+                    <strong>Poids :</strong>
+                    {{
+                      babyConfig.weight_kg
+                        ? babyConfig.weight_kg.toFixed(2) + ' kg'
+                        : 'Non renseigné'
+                    }}
+                  </li>
+                </ul>
+              </div>
+
+              <div class="pt-4 border-t border-[var(--ui-border)] space-y-3">
+                <!-- Bouton Test -->
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  block
+                  :loading="sendingBirthTest"
+                  @click="sendBirthAnnouncement(true)"
+                >
+                  <template #leading>
+                    <UIcon name="i-lucide-flask-conical" />
+                  </template>
+                  Tester le mail de naissance
+                </UButton>
+
+                <!-- Bouton Production -->
+                <UButton color="primary" block :loading="sendingBirthAll" @click="confirmSendToAll">
+                  <template #leading>
+                    <UIcon name="i-lucide-send" />
+                  </template>
+                  Prévenir les participants
+                </UButton>
+              </div>
+
+              <!-- Résultat -->
+              <div v-if="birthAnnouncementResult" class="pt-4">
+                <UAlert
+                  :color="birthAnnouncementResult.success ? 'success' : 'error'"
+                  :title="birthAnnouncementResult.success ? 'Emails envoyés !' : 'Erreur'"
+                  :description="birthAnnouncementResult.message"
+                  :icon="
+                    birthAnnouncementResult.success
+                      ? 'i-lucide-check-circle'
+                      : 'i-lucide-alert-circle'
+                  "
+                />
+              </div>
+            </div>
+          </UCard>
+
+          <!-- Modal de confirmation -->
+          <UModal v-model:open="showConfirmModal">
+            <template #content>
+              <div class="p-6 space-y-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                    <UIcon name="i-lucide-alert-triangle" class="text-amber-600 text-xl" />
+                  </div>
+                  <h3 class="text-lg font-semibold">Confirmer l'envoi</h3>
+                </div>
+                <p class="text-[var(--ui-text-dimmed)]">
+                  Vous êtes sur le point d'envoyer l'annonce de naissance à
+                  <strong>tous les participants</strong>
+                  de la Kermesse du Bébé.
+                </p>
+                <p class="text-sm text-[var(--ui-text-dimmed)]">
+                  Cette action ne peut pas être annulée.
+                </p>
+                <div class="flex gap-3 pt-4">
+                  <UButton
+                    color="neutral"
+                    variant="outline"
+                    block
+                    @click="showConfirmModal = false"
+                  >
+                    Annuler
+                  </UButton>
+                  <UButton
+                    color="primary"
+                    block
+                    :loading="sendingBirthAll"
+                    @click="sendBirthAnnouncement(false)"
+                  >
+                    Confirmer l'envoi
+                  </UButton>
+                </div>
+              </div>
+            </template>
+          </UModal>
+
           <!-- Section Test Email (Existing) -->
           <UCard>
             <template #header>
@@ -218,6 +358,84 @@
   const password = ref('')
   const loginError = ref('')
   const loggingIn = ref(false)
+
+  // Birth Announcement
+  const sendingBirthTest = ref(false)
+  const sendingBirthAll = ref(false)
+  const showConfirmModal = ref(false)
+  const birthAnnouncementResult = ref<{ success: boolean; message: string } | null>(null)
+
+  // Computed pour formater la date de naissance
+  const formatBirthDate = computed(() => {
+    if (!babyConfig.value.birth_date) return 'Non renseignée'
+    return new Date(babyConfig.value.birth_date).toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    })
+  })
+
+  function confirmSendToAll() {
+    showConfirmModal.value = true
+  }
+
+  async function sendBirthAnnouncement(testMode: boolean) {
+    if (testMode) {
+      sendingBirthTest.value = true
+    } else {
+      sendingBirthAll.value = true
+    }
+    birthAnnouncementResult.value = null
+
+    try {
+      const response = await $fetch<{
+        success: boolean
+        messageId: string
+        recipientCount: number
+        testMode: boolean
+      }>('/api/send-birth-announcement', {
+        method: 'POST',
+        body: {
+          testMode,
+          babyName: babyConfig.value.baby_name,
+          birthDate: babyConfig.value.birth_date,
+          birthTime: babyConfig.value.birth_time,
+          weightKg: babyConfig.value.weight_kg,
+          sex: babyConfig.value.sex,
+        },
+      })
+
+      const modeLabel = testMode ? 'test' : 'tous les participants'
+      birthAnnouncementResult.value = {
+        success: true,
+        message: `Email envoyé avec succès à ${response.recipientCount} destinataire${response.recipientCount > 1 ? 's' : ''} (${modeLabel})`,
+      }
+
+      toast.add({
+        title: 'Email envoyé !',
+        description: `${response.recipientCount} destinataire${response.recipientCount > 1 ? 's' : ''}`,
+        color: 'success',
+      })
+
+      showConfirmModal.value = false
+    } catch (error) {
+      console.error("Erreur lors de l'envoi de l'annonce:", error)
+      birthAnnouncementResult.value = {
+        success: false,
+        message: error instanceof Error ? error.message : 'Erreur inconnue',
+      }
+
+      toast.add({
+        title: 'Erreur',
+        description: "Impossible d'envoyer l'annonce",
+        color: 'error',
+      })
+    } finally {
+      sendingBirthTest.value = false
+      sendingBirthAll.value = false
+    }
+  }
 
   async function login() {
     loggingIn.value = true
