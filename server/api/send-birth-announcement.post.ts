@@ -86,7 +86,7 @@ export default defineEventHandler(async (event) => {
         : 'https://kermesse.hallais.bzh/png/Fille.png'
 
     const pigAvatarHTML = `
-      <div style="text-align: center; margin: 30px 0;">
+      <div style="text-align: center; margin: 15px 0;">
         <img src="${pigImageUrl}" alt="Cochon festif" style="width: 180px; height: auto;" />
       </div>
     `
@@ -108,10 +108,10 @@ export default defineEventHandler(async (event) => {
               sex === 'M' ? '#1D4ED8' : '#DB2777'
             } 100%); padding: 30px 20px; text-align: center;">
               <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">
-                🎉 ${babyName || 'Bébé'} est arrivé${sex === 'F' ? 'e' : ''} ! 🎉
+                🎉 Le petit cochon est né !
               </h1>
               <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 16px;">
-                La grande nouvelle tant attendue !
+                La grande nouvelle tant attendue...
               </p>
             </div>
 
@@ -122,10 +122,10 @@ export default defineEventHandler(async (event) => {
 
               <!-- Annonce -->
               <div style="text-align: center; margin-bottom: 30px;">
-                <p style="font-size: 18px; color: #374151; line-height: 1.6;">
+                <p style="font-size: 18px; color: #374151; line-height: 1.6; margin-bottom: 5px;">
                   Nous avons la joie de vous annoncer la naissance de
                 </p>
-                <h2 style="font-size: 32px; color: ${primaryColor}; margin: 20px 0; font-weight: 700;">
+                <h2 style="font-size: 40px; color: ${primaryColor}; margin: 5px 0 20px 0; font-weight: 700;">
                   ${babyName || 'Notre bébé'}
                 </h2>
               </div>
@@ -190,9 +190,7 @@ Ce message a été envoyé automatiquement depuis la Kermesse du Bébé
     const mailOptions = {
       from: `"Kermesse du Bébé" <${gmailUser}>`,
       bcc: recipientEmails.join(', '), // BCC pour ne pas exposer les emails des autres
-      subject: `🎉 ${babyName || 'Bébé'} est né${
-        sex === 'F' ? 'e' : ''
-      } ! Découvrez les résultats du concours`,
+      subject: `Le petit cochon est arrivé ! Découvrez les résultats de la Kermesse !`,
       html: htmlContent,
       text: textContent,
     }
