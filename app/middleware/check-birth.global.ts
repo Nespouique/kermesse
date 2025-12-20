@@ -1,4 +1,4 @@
-export default defineNuxtRouteMiddleware(async (to, from) => {
+export default defineNuxtRouteMiddleware(async (to, _from) => {
   // Skip for admin routes
   if (to.path.startsWith('/admin')) return
 
@@ -16,7 +16,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
     try {
       const { data, error } = await $supabase.from('app_config').select('is_born').single()
-      
+
       if (error) {
         birthCheckDone.value = true
         return

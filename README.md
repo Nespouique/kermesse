@@ -17,6 +17,7 @@
 - **Persistance des données** via un backend léger (Supabase).
 - **Thème clair/sombre** pour le confort visuel.
 - **Interface responsive** et moderne grâce à Tailwind CSS et Nuxt UI.
+- **Calcul automatique des scores** et classement des vainqueurs — voir [Algorithme de calcul des scores](Algorithme.md).
 
 ## Stack technique
 

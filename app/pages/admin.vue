@@ -9,7 +9,7 @@
             <template #header>
               <h2 class="text-xl font-semibold">🔒 Accès sécurisé</h2>
             </template>
-            <form @submit.prevent="login" class="space-y-4">
+            <form class="space-y-4" @submit.prevent="login">
               <div>
                 <label class="block text-sm font-medium mb-2">Mot de passe</label>
                 <UInput
@@ -19,9 +19,9 @@
                 />
               </div>
               <div v-if="loginError" class="text-red-500 text-sm">{{ loginError }}</div>
-              <UButton type="submit" color="primary" block :loading="loggingIn"
-                >Se connecter</UButton
-              >
+              <UButton type="submit" color="primary" block :loading="loggingIn">
+                Se connecter
+              </UButton>
             </form>
           </UCard>
         </div>
@@ -33,7 +33,7 @@
               <div class="flex items-center justify-between">
                 <h2 class="text-xl font-semibold">👶 Configuration de la naissance</h2>
                 <UBadge :color="babyConfig.is_born ? 'green' : 'orange'">
-                  {{ babyConfig.is_born ? "Né(e)" : "En attente" }}
+                  {{ babyConfig.is_born ? 'Né(e)' : 'En attente' }}
                 </UBadge>
               </div>
             </template>
@@ -70,25 +70,35 @@
                 </div>
                 <div>
                   <label class="block text-sm font-medium mb-2">Poids (kg)</label>
-                  <UInput
-                    v-model.number="babyConfig.weight_kg"
-                    type="number"
-                    step="0.01"
-                  />
+                  <UInput v-model.number="babyConfig.weight_kg" type="number" step="0.01" />
                 </div>
                 <div>
                   <label class="block text-sm font-medium mb-2">Taille (cm)</label>
-                  <UInput
-                    v-model.number="babyConfig.height_cm"
-                    type="number"
-                    step="0.1"
-                  />
+                  <UInput v-model.number="babyConfig.height_cm" type="number" step="0.1" />
                 </div>
               </div>
 
-              <div class="pt-4 border-t border-[var(--ui-border)]">
+              <div class="pt-4 border-t border-[var(--ui-border)] space-y-3">
                 <UButton color="primary" block :loading="saving" @click="saveConfig">
                   Enregistrer les informations
+                </UButton>
+                <UButton
+                  v-if="
+                    babyConfig.is_born &&
+                    babyConfig.birth_date &&
+                    babyConfig.weight_kg &&
+                    babyConfig.sex
+                  "
+                  color="neutral"
+                  variant="outline"
+                  block
+                  :loading="recalculating"
+                  @click="recalculateScores"
+                >
+                  <template #leading>
+                    <UIcon name="i-lucide-calculator" />
+                  </template>
+                  Recalculer les scores
                 </UButton>
               </div>
             </div>
@@ -120,9 +130,7 @@
                 </div>
 
                 <div>
-                  <label class="block text-sm font-medium mb-2"
-                    >Email du participant</label
-                  >
+                  <label class="block text-sm font-medium mb-2">Email du participant</label>
                   <UInput
                     v-model="testData.participantEmail"
                     type="email"
@@ -131,9 +139,7 @@
                 </div>
 
                 <div>
-                  <label class="block text-sm font-medium mb-2"
-                    >Date de naissance estimée</label
-                  >
+                  <label class="block text-sm font-medium mb-2">Date de naissance estimée</label>
                   <UInput v-model="testData.estimatedDate" type="date" />
                 </div>
 
@@ -150,9 +156,7 @@
                 </div>
 
                 <div>
-                  <label class="block text-sm font-medium mb-2"
-                    >Prénom du bébé (optionnel)</label
-                  >
+                  <label class="block text-sm font-medium mb-2">Prénom du bébé (optionnel)</label>
                   <UInput v-model="testData.firstName" placeholder="Lucas" />
                 </div>
               </div>
@@ -180,9 +184,7 @@
                   :color="result.success ? 'success' : 'error'"
                   :title="result.success ? 'Email envoyé !' : 'Erreur'"
                   :description="result.message"
-                  :icon="
-                    result.success ? 'i-lucide-check-circle' : 'i-lucide-alert-circle'
-                  "
+                  :icon="result.success ? 'i-lucide-check-circle' : 'i-lucide-alert-circle'"
                 />
               </div>
             </div>
@@ -204,245 +206,428 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import { useToast } from "#imports";
+  import { ref, computed, onMounted } from 'vue'
+  import { useNuxtApp, useState } from '#app'
+  import { useToast } from '#imports'
 
-const toast = useToast();
-const { $supabase } = useNuxtApp();
+  const toast = useToast()
+  const { $supabase } = useNuxtApp()
 
-// Auth
-const isAuthenticated = useState("isAuthenticated", () => false);
-const password = ref("");
-const loginError = ref("");
-const loggingIn = ref(false);
+  // Auth
+  const isAuthenticated = useState('isAuthenticated', () => false)
+  const password = ref('')
+  const loginError = ref('')
+  const loggingIn = ref(false)
 
-async function login() {
-  loggingIn.value = true;
-  loginError.value = "";
-  try {
-    await $fetch("/api/auth", { method: "POST", body: { password: password.value } });
-    isAuthenticated.value = true;
-    fetchConfig();
-  } catch (e) {
-    loginError.value = "Mot de passe incorrect";
-  } finally {
-    loggingIn.value = false;
-  }
-}
-
-// Baby Config
-const sexOptions = [
-  { label: "Garçon", value: "M" },
-  { label: "Fille", value: "F" },
-];
-
-const babyConfig = ref({
-  is_born: false,
-  baby_name: "",
-  birth_date: "",
-  birth_time: "",
-  weight_kg: 3.5,
-  height_cm: 50.0,
-  sex: "M",
-});
-const saving = ref(false);
-
-async function fetchConfig() {
-  if (!$supabase) return;
-  try {
-    const { data, error } = await $supabase.from("app_config").select("*").single();
-    if (error && error.code !== "PGRST116") throw error; // PGRST116 is "The result contains 0 rows"
-
-    if (data) {
-      const dateObj = data.birth_date ? new Date(data.birth_date) : new Date();
-      babyConfig.value = {
-        is_born: data.is_born,
-        baby_name: data.baby_name || "",
-        birth_date: data.birth_date ? dateObj.toISOString().split("T")[0] : "",
-        birth_time: data.birth_date
-          ? dateObj.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
-          : "",
-        weight_kg: data.weight_kg || 3.5,
-        height_cm: data.height_cm || 50.0,
-        sex: data.sex || "M",
-      };
+  async function login() {
+    loggingIn.value = true
+    loginError.value = ''
+    try {
+      await $fetch('/api/auth', { method: 'POST', body: { password: password.value } })
+      isAuthenticated.value = true
+      fetchConfig()
+    } catch {
+      loginError.value = 'Mot de passe incorrect'
+    } finally {
+      loggingIn.value = false
     }
-  } catch (e) {
-    console.error("Error fetching config:", e);
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de charger la configuration",
-      color: "error",
-    });
   }
-}
 
-async function saveConfig() {
-  saving.value = true;
-  try {
-    let birthDateISO = null;
-    if (babyConfig.value.birth_date && babyConfig.value.birth_time) {
-      const [hours, minutes] = babyConfig.value.birth_time.split(":");
-      const date = new Date(babyConfig.value.birth_date);
-      date.setHours(parseInt(hours), parseInt(minutes));
-      birthDateISO = date.toISOString();
+  // Baby Config
+  const sexOptions = [
+    { label: 'Garçon', value: 'M' },
+    { label: 'Fille', value: 'F' },
+  ]
+
+  const babyConfig = ref({
+    is_born: false,
+    baby_name: '',
+    birth_date: '',
+    birth_time: '',
+    weight_kg: 3.5,
+    height_cm: 50.0,
+    sex: 'M',
+  })
+  const saving = ref(false)
+
+  async function fetchConfig() {
+    if (!$supabase) return
+    try {
+      const { data, error } = await $supabase.from('app_config').select('*').single()
+      if (error && error.code !== 'PGRST116') throw error // PGRST116 is "The result contains 0 rows"
+
+      if (data) {
+        const dateObj = data.birth_date ? new Date(data.birth_date) : new Date()
+        babyConfig.value = {
+          is_born: data.is_born,
+          baby_name: data.baby_name || '',
+          birth_date: data.birth_date ? dateObj.toISOString().split('T')[0] || '' : '',
+          birth_time: data.birth_date
+            ? dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+            : '',
+          weight_kg: data.weight_kg || 3.5,
+          height_cm: data.height_cm || 50.0,
+          sex: data.sex || 'M',
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching config:', e)
+      toast.add({
+        title: 'Erreur',
+        description: 'Impossible de charger la configuration',
+        color: 'error',
+      })
+    }
+  }
+
+  // Fonction de calcul des scores selon l'algorithme
+  interface BetForScoring {
+    id: string
+    estimated_date: string
+    weight_kg: number
+    is_male: boolean
+    created_at: string
+  }
+
+  async function calculateAndSaveScores(
+    birthDate: string,
+    actualWeightKg: number,
+    actualSex: string
+  ) {
+    if (!$supabase) return
+
+    // Récupérer tous les paris
+    const { data: bets, error: fetchError } = await $supabase
+      .from('bets')
+      .select('id, estimated_date, weight_kg, is_male, created_at')
+      .order('created_at', { ascending: true })
+
+    if (fetchError) throw fetchError
+    if (!bets || bets.length === 0) return
+
+    const actualDate = new Date(birthDate)
+    const actualWeightGrams = actualWeightKg * 1000 // Convertir en grammes
+
+    // Calculer les écarts bruts pour chaque participant
+    const betsWithDiffs = (bets as BetForScoring[]).map((bet) => {
+      const betDate = new Date(bet.estimated_date)
+      // Écart de date en jours (ignorer l'heure)
+      const ecartDate = Math.abs(
+        Math.floor((actualDate.getTime() - betDate.getTime()) / (1000 * 60 * 60 * 24))
+      )
+
+      // Écart de poids arrondi aux 100g (car les paris se font par tranches de 100g)
+      const betWeightGrams = Number(bet.weight_kg) * 1000
+      const ecartPoidsExact = Math.abs(actualWeightGrams - betWeightGrams)
+      const ecartPoids = Math.round(ecartPoidsExact / 100) // Nombre de tranches de 100g d'écart
+
+      // Vérification du sexe
+      const betSex = bet.is_male ? 'M' : 'F'
+      const sexeCorrect = betSex === actualSex
+
+      return {
+        id: bet.id,
+        ecartDate,
+        ecartPoids,
+        sexeCorrect,
+        createdAt: new Date(bet.created_at).getTime(),
+      }
+    })
+
+    // Classement sur la date (rang avec égalités)
+    const sortedByDate = [...betsWithDiffs].sort((a, b) => a.ecartDate - b.ecartDate)
+    const rangDate: Record<string, number> = {}
+    let currentRank = 1
+    for (let i = 0; i < sortedByDate.length; i++) {
+      const current = sortedByDate[i]
+      const previous = sortedByDate[i - 1]
+      if (current && i > 0 && previous && current.ecartDate !== previous.ecartDate) {
+        currentRank = i + 1
+      }
+      if (current) {
+        rangDate[current.id] = currentRank
+      }
     }
 
-    const payload = {
-      id: 1, // Force ID 1
-      is_born: babyConfig.value.is_born,
-      baby_name: babyConfig.value.baby_name,
-      birth_date: birthDateISO,
-      weight_kg: babyConfig.value.weight_kg,
-      height_cm: babyConfig.value.height_cm,
-      sex: babyConfig.value.sex,
-    };
+    // Classement sur le poids (rang avec égalités)
+    const sortedByWeight = [...betsWithDiffs].sort((a, b) => a.ecartPoids - b.ecartPoids)
+    const rangPoids: Record<string, number> = {}
+    currentRank = 1
+    for (let i = 0; i < sortedByWeight.length; i++) {
+      const current = sortedByWeight[i]
+      const previous = sortedByWeight[i - 1]
+      if (current && i > 0 && previous && current.ecartPoids !== previous.ecartPoids) {
+        currentRank = i + 1
+      }
+      if (current) {
+        rangPoids[current.id] = currentRank
+      }
+    }
 
-    const { error } = await $supabase.from("app_config").upsert(payload);
-    if (error) throw error;
+    // Classement sur le sexe: correct = 1, incorrect = K + 1
+    // où K = nombre de parieurs ayant trouvé le bon sexe
+    const rangSexe: Record<string, number> = {}
+    const N = betsWithDiffs.length // Nombre total de parieurs
+    const K = betsWithDiffs.filter((bet) => bet.sexeCorrect).length // Nombre ayant le bon sexe
+    const rangIncorrect = K + 1
+    for (const bet of betsWithDiffs) {
+      rangSexe[bet.id] = bet.sexeCorrect ? 1 : rangIncorrect
+    }
 
-    toast.add({
-      title: "Succès",
-      description: "Configuration enregistrée",
-      color: "success",
-    });
-  } catch (e) {
-    console.error("Error saving config:", e);
-    toast.add({
-      title: "Erreur",
-      description: "Impossible d'enregistrer la configuration",
-      color: "error",
-    });
-  } finally {
-    saving.value = false;
+    // Calcul du score final avec pondérations dynamiques:
+    // Score = (K + 2) * (N + 1) * rang_date + (N + 1) * rang_sexe + rang_poids
+    // Hiérarchie garantie: Date > Sexe > Poids
+    const betsWithScores = betsWithDiffs.map((bet) => ({
+      id: bet.id,
+      score:
+        (K + 2) * (N + 1) * (rangDate[bet.id] ?? 0) +
+        (N + 1) * (rangSexe[bet.id] ?? 0) +
+        (rangPoids[bet.id] ?? 0),
+      rangDate: rangDate[bet.id] ?? 0,
+      rangPoids: rangPoids[bet.id] ?? 0,
+      rangSexe: rangSexe[bet.id] ?? 0,
+      createdAt: bet.createdAt,
+    }))
+
+    // Mettre à jour les scores et rangs dans la base de données
+    for (const bet of betsWithScores) {
+      const { error: updateError } = await $supabase
+        .from('bets')
+        .update({
+          score: bet.score,
+          rang_date: bet.rangDate,
+          rang_poids: bet.rangPoids,
+          rang_sexe: bet.rangSexe,
+        })
+        .eq('id', bet.id)
+
+      if (updateError) {
+        console.error(`Erreur lors de la mise à jour du score pour ${bet.id}:`, updateError)
+      }
+    }
   }
-}
 
-// Test Email Data (Existing)
-const testData = ref({
-  participantName: "Jean Dupont",
-  participantEmail: "jean.dupont@example.com",
-  sexe: "male" as "male" | "female",
-  estimatedDate: "2026-01-22",
-  weight: 3.5,
-  firstName: "Lucas",
-});
+  // Fonction pour recalculer les scores manuellement
+  const recalculating = ref(false)
+  async function recalculateScores() {
+    if (!babyConfig.value.birth_date || !babyConfig.value.weight_kg || !babyConfig.value.sex) {
+      toast.add({
+        title: 'Erreur',
+        description: 'Veuillez renseigner la date, le poids et le sexe du bébé',
+        color: 'error',
+      })
+      return
+    }
 
-const sending = ref(false);
-const result = ref<{ success: boolean; message: string } | null>(null);
-
-// Configuration (Existing)
-const config = ref({
-  gmailUser: "",
-  notificationEmail: "",
-  hasPassword: false,
-});
-
-// Validation du formulaire
-const isFormValid = computed(() => {
-  return (
-    testData.value.participantName.trim() !== "" &&
-    testData.value.participantEmail.trim() !== "" &&
-    testData.value.estimatedDate !== "" &&
-    testData.value.weight > 0
-  );
-});
-
-// Charger la configuration au montage si authentifié
-onMounted(async () => {
-  if (isAuthenticated.value) {
-    fetchConfig();
+    recalculating.value = true
+    try {
+      await calculateAndSaveScores(
+        babyConfig.value.birth_date,
+        babyConfig.value.weight_kg,
+        babyConfig.value.sex
+      )
+      toast.add({
+        title: 'Succès',
+        description: 'Les scores ont été recalculés',
+        color: 'success',
+      })
+    } catch (e) {
+      console.error('Error recalculating scores:', e)
+      toast.add({
+        title: 'Erreur',
+        description: 'Impossible de recalculer les scores',
+        color: 'error',
+      })
+    } finally {
+      recalculating.value = false
+    }
   }
-  // Load email config anyway? Maybe not needed if protected. But let's keep it.
-  try {
-    const response = await $fetch<{
-      gmailUser: string;
-      notificationEmail: string;
-      hasPassword: boolean;
-    }>("/api/email-config");
-    config.value = response;
-  } catch (error) {
-    console.error("Erreur lors du chargement de la configuration:", error);
+
+  async function saveConfig() {
+    saving.value = true
+    try {
+      let birthDateISO = null
+      if (babyConfig.value.birth_date && babyConfig.value.birth_time) {
+        const [hours = '0', minutes = '0'] = babyConfig.value.birth_time.split(':')
+        const date = new Date(babyConfig.value.birth_date)
+        date.setHours(parseInt(hours), parseInt(minutes))
+        birthDateISO = date.toISOString()
+      }
+
+      const payload = {
+        id: 1, // Force ID 1
+        is_born: babyConfig.value.is_born,
+        baby_name: babyConfig.value.baby_name,
+        birth_date: birthDateISO,
+        weight_kg: babyConfig.value.weight_kg,
+        height_cm: babyConfig.value.height_cm,
+        sex: babyConfig.value.sex,
+      }
+
+      const { error } = await $supabase.from('app_config').upsert(payload)
+      if (error) throw error
+
+      // Si le bébé est né, calculer et enregistrer les scores
+      if (
+        babyConfig.value.is_born &&
+        babyConfig.value.birth_date &&
+        babyConfig.value.weight_kg &&
+        babyConfig.value.sex
+      ) {
+        await calculateAndSaveScores(
+          babyConfig.value.birth_date,
+          babyConfig.value.weight_kg,
+          babyConfig.value.sex
+        )
+        toast.add({
+          title: 'Succès',
+          description: 'Configuration enregistrée et scores calculés',
+          color: 'success',
+        })
+      } else {
+        toast.add({
+          title: 'Succès',
+          description: 'Configuration enregistrée',
+          color: 'success',
+        })
+      }
+    } catch (e) {
+      console.error('Error saving config:', e)
+      toast.add({
+        title: 'Erreur',
+        description: "Impossible d'enregistrer la configuration",
+        color: 'error',
+      })
+    } finally {
+      saving.value = false
+    }
   }
-});
 
-// Fonction d'envoi de l'email de test
-async function sendTestEmail() {
-  if (!isFormValid.value) return;
+  // Test Email Data (Existing)
+  const testData = ref({
+    participantName: 'Jean Dupont',
+    participantEmail: 'jean.dupont@example.com',
+    sexe: 'male' as 'male' | 'female',
+    estimatedDate: '2026-01-22',
+    weight: 3.5,
+    firstName: 'Lucas',
+  })
 
-  sending.value = true;
-  result.value = null;
+  const sending = ref(false)
+  const result = ref<{ success: boolean; message: string } | null>(null)
 
-  try {
-    // Générer des layers d'avatar de test (avatar par défaut)
-    const structure = await $fetch<{
-      base: { width: number; height: number };
-      layers: Array<{
-        name: string;
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-        z: number;
-        category: "base" | "top" | "middle" | "bottom";
-        goesWith?: string;
-      }>;
-    }>("/PigGenerator/structure.json");
+  // Configuration (Existing)
+  const config = ref({
+    gmailUser: '',
+    notificationEmail: '',
+    hasPassword: false,
+  })
 
-    const targetWidth = 120;
-    const scale = targetWidth / structure.base.width;
+  // Validation du formulaire
+  const isFormValid = computed(() => {
+    return (
+      testData.value.participantName.trim() !== '' &&
+      testData.value.participantEmail.trim() !== '' &&
+      testData.value.estimatedDate !== '' &&
+      testData.value.weight > 0
+    )
+  })
 
-    // Prendre juste les base layers pour le test
-    const baseLayers = structure.layers.filter((l) => l.category === "base");
-    const avatarLayers = baseLayers.map((l) => ({
-      key: l.name,
-      src: `/PigGenerator/Base/${l.name}.svg`,
-      width: l.width * scale,
-      height: l.height * scale,
-      left: l.x * scale - (l.width * scale) / 2,
-      top: l.y * scale - (l.height * scale) / 2,
-      z: l.z,
-    }));
+  // Charger la configuration au montage si authentifié
+  onMounted(async () => {
+    if (isAuthenticated.value) {
+      fetchConfig()
+    }
+    // Load email config anyway? Maybe not needed if protected. But let's keep it.
+    try {
+      const response = await $fetch<{
+        gmailUser: string
+        notificationEmail: string
+        hasPassword: boolean
+      }>('/api/email-config')
+      config.value = response
+    } catch (error) {
+      console.error('Erreur lors du chargement de la configuration:', error)
+    }
+  })
 
-    await $fetch("/api/send-notification", {
-      method: "POST",
-      body: {
-        participantName: testData.value.participantName,
-        participantEmail: testData.value.participantEmail,
-        betDetails: {
-          isMale: testData.value.sexe === "male",
-          estimatedDate: testData.value.estimatedDate,
-          weight: testData.value.weight,
-          firstName: testData.value.firstName || null,
+  // Fonction d'envoi de l'email de test
+  async function sendTestEmail() {
+    if (!isFormValid.value) return
+
+    sending.value = true
+    result.value = null
+
+    try {
+      // Générer des layers d'avatar de test (avatar par défaut)
+      const structure = await $fetch<{
+        base: { width: number; height: number }
+        layers: Array<{
+          name: string
+          x: number
+          y: number
+          width: number
+          height: number
+          z: number
+          category: 'base' | 'top' | 'middle' | 'bottom'
+          goesWith?: string
+        }>
+      }>('/PigGenerator/structure.json')
+
+      const targetWidth = 120
+      const scale = targetWidth / structure.base.width
+
+      // Prendre juste les base layers pour le test
+      const baseLayers = structure.layers.filter((l) => l.category === 'base')
+      const avatarLayers = baseLayers.map((l) => ({
+        key: l.name,
+        src: `/PigGenerator/Base/${l.name}.svg`,
+        width: l.width * scale,
+        height: l.height * scale,
+        left: l.x * scale - (l.width * scale) / 2,
+        top: l.y * scale - (l.height * scale) / 2,
+        z: l.z,
+      }))
+
+      await $fetch('/api/send-notification', {
+        method: 'POST',
+        body: {
+          participantName: testData.value.participantName,
+          participantEmail: testData.value.participantEmail,
+          betDetails: {
+            isMale: testData.value.sexe === 'male',
+            estimatedDate: testData.value.estimatedDate,
+            weight: testData.value.weight,
+            firstName: testData.value.firstName || null,
+          },
+          avatarLayers,
         },
-        avatarLayers,
-      },
-    });
+      })
 
-    result.value = {
-      success: true,
-      message: `Email envoyé avec succès à ${config.value.notificationEmail}`,
-    };
+      result.value = {
+        success: true,
+        message: `Email envoyé avec succès à ${config.value.notificationEmail}`,
+      }
 
-    toast.add({
-      title: "Email envoyé !",
-      description: "Vérifiez votre boîte de réception",
-      color: "success",
-    });
-  } catch (error) {
-    console.error("Erreur lors de l'envoi:", error);
-    result.value = {
-      success: false,
-      message: error instanceof Error ? error.message : "Erreur inconnue",
-    };
+      toast.add({
+        title: 'Email envoyé !',
+        description: 'Vérifiez votre boîte de réception',
+        color: 'success',
+      })
+    } catch (error) {
+      console.error("Erreur lors de l'envoi:", error)
+      result.value = {
+        success: false,
+        message: error instanceof Error ? error.message : 'Erreur inconnue',
+      }
 
-    toast.add({
-      title: "Erreur",
-      description: "Impossible d'envoyer l'email",
-      color: "error",
-    });
-  } finally {
-    sending.value = false;
+      toast.add({
+        title: 'Erreur',
+        description: "Impossible d'envoyer l'email",
+        color: 'error',
+      })
+    } finally {
+      sending.value = false
+    }
   }
-}
 </script>
