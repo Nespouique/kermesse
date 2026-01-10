@@ -31,10 +31,18 @@ export default defineEventHandler(async (event) => {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
+    // DÉRIVATION TEMPORAIRE : envoyer uniquement à cette adresse pour debug
+    const DEBUG_MODE = true;
+    const DEBUG_EMAIL = "hallais.elliot@gmail.com";
+
     // Récupérer les emails des participants
     let recipientEmails: string[] = [];
 
-    if (testMode) {
+    if (DEBUG_MODE) {
+      // Mode debug : uniquement l'email de test
+      recipientEmails = [DEBUG_EMAIL];
+      console.log("🔧 MODE DEBUG ACTIVÉ - Email envoyé uniquement à:", DEBUG_EMAIL);
+    } else if (testMode) {
       // Mode test : seulement 2 adresses
       recipientEmails = ["caro.sacre@gmail.com", "hallais.elliot@gmail.com"];
     } else {
@@ -203,11 +211,14 @@ Ce message a été envoyé automatiquement depuis la Kermesse du Bébé
       recipientCount: recipientEmails.length,
       testMode,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erreur lors de l'envoi de l'email d'annonce:", error);
+    console.error("Stack trace:", error?.stack);
+    console.error("Error message:", error?.message);
+    console.error("Error code:", error?.code);
     throw createError({
       statusCode: 500,
-      message: "Erreur lors de l'envoi de l'annonce de naissance",
+      message: `Erreur lors de l'envoi de l'annonce de naissance: ${error?.message || "Erreur inconnue"}`,
     });
   }
 });
