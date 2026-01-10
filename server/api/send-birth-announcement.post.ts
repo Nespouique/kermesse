@@ -31,37 +31,44 @@ export default defineEventHandler(async (event) => {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
-    // DÉRIVATION TEMPORAIRE : envoyer uniquement à cette adresse pour debug
-    const DEBUG_MODE = true;
-    const DEBUG_EMAIL = "hallais.elliot@gmail.com";
-
     // Récupérer les emails des participants
     let recipientEmails: string[] = [];
 
-    if (DEBUG_MODE) {
-      // Mode debug : uniquement l'email de test
-      recipientEmails = [DEBUG_EMAIL];
-      console.log("🔧 MODE DEBUG ACTIVÉ - Email envoyé uniquement à:", DEBUG_EMAIL);
-    } else if (testMode) {
+    console.log("📧 Début de l'envoi d'annonce de naissance");
+    console.log("📧 testMode:", testMode);
+
+    if (testMode) {
       // Mode test : seulement 2 adresses
       recipientEmails = ["caro.sacre@gmail.com", "hallais.elliot@gmail.com"];
+      console.log("📧 Mode TEST - Envoi à:", recipientEmails);
     } else {
-      // Mode production : tous les emails uniques des parieurs
+      // Mode production : tous les emails uniques des parieurs via la table participants
+      console.log("📧 Mode PRODUCTION - Récupération des emails depuis Supabase...");
+
       const { data: bets, error: fetchError } = await supabase
         .from("bets")
-        .select("email")
-        .not("email", "is", null);
+        .select("participant_id, participants(email)")
+        .not("participant_id", "is", null);
+
+      console.log("📧 Résultat requête Supabase:");
+      console.log("📧 - Erreur:", fetchError);
+      console.log("📧 - Nombre de bets récupérés:", bets?.length ?? 0);
+      console.log("📧 - Premiers bets (sample):", JSON.stringify(bets?.slice(0, 5)));
 
       if (fetchError) throw fetchError;
 
-      // Extraire les emails uniques
+      // Extraire les emails uniques depuis la relation participants
       const uniqueEmails = new Set<string>();
       for (const bet of bets || []) {
-        if (bet.email && typeof bet.email === "string" && bet.email.trim()) {
-          uniqueEmails.add(bet.email.trim().toLowerCase());
+        const participant = bet.participants as unknown as { email: string } | null;
+        const email = participant?.email;
+        if (email && typeof email === "string" && email.trim()) {
+          uniqueEmails.add(email.trim().toLowerCase());
         }
       }
       recipientEmails = Array.from(uniqueEmails);
+      console.log("📧 Emails uniques trouvés:", recipientEmails.length);
+      console.log("📧 Liste des emails:", JSON.stringify(recipientEmails));
     }
 
     if (recipientEmails.length === 0) {
@@ -204,6 +211,10 @@ Ce message a été envoyé automatiquement depuis la Kermesse du Bébé
     };
 
     const info = await transporter.sendMail(mailOptions);
+
+    console.log("📧 Email envoyé avec succès!");
+    console.log("📧 - messageId:", info.messageId);
+    console.log("📧 - recipientCount:", recipientEmails.length);
 
     return {
       success: true,
