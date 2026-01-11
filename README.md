@@ -14,7 +14,7 @@
   - Sélecteur d’avatar (liste d’images SVG)
 - **Tableau récapitulatif** des paris de tous les participants, affiché sous le bouton.
 - **Lignes barrées** automatiquement pour les paris dont la date est dépassée.
-- **Persistance des données** via un backend léger (Supabase).
+- **Persistance des données** via PostgreSQL.
 - **Thème clair/sombre** pour le confort visuel.
 - **Interface responsive** et moderne grâce à Tailwind CSS et Nuxt UI.
 - **Calcul automatique des scores** et classement des vainqueurs — voir [Algorithme de calcul des scores](Algorithme.md).
@@ -24,7 +24,7 @@
 - **[Nuxt 4](https://nuxt.com/)** (Vue 3) — Framework principal pour le frontend.
 - **[Tailwind CSS](https://tailwindcss.com/)** — Pour le style utilitaire et la responsivité.
 - **[Nuxt UI](https://ui.nuxt.com/)** — Composants UI prêts à l’emploi.
-- **[Supabase](https://supabase.com/)** — Backend as a Service pour la persistance des paris.
+- **PostgreSQL** — Base de données relationnelle pour la persistance des paris.
 - **[VueUse](https://vueuse.org/)** — Utilitaires Vue 3 (gestion des breakpoints, color mode, etc).
 - **[Lucide Icons](https://lucide.dev/icons/)** — Icônes SVG modernes.
 - **ESLint** — Linting et qualité du code.
@@ -45,28 +45,21 @@ npm run dev
 Voir la documentation Nuxt pour le déploiement :  
 https://nuxt.com/docs/getting-started/deployment
 
-### Configuration Supabase / Vercel
+### Configuration Docker / Vercel
 
-Variables d'environnement à définir (Vercel Project Settings > Environment Variables) :
+Variables d'environnement à définir :
 
 ```
-NUXT_PUBLIC_SUPABASE_URL=https://wyxmlrjafkmkvzrtxeiy.supabase.co
-NUXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5eG1scmphZmtta3Z6cnR4ZWl5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyMTI1MzUsImV4cCI6MjA2ODc4ODUzNX0._jXKEJYY5sXF6cElJtz3UKh6tMcrCIRhbiJfLjzTnS0
+DATABASE_URL=postgres://kermesse:password@localhost:5432/kermesse
 NUXT_ADMIN_PASSWORD=admin
 ```
-
 En local, copier `.env.example` en `.env.local` et ajuster si besoin.
 
-### Étapes de déploiement Vercel (résumé)
+### Déploiement avec Docker
 
-1. Importer le repo sur Vercel.
-2. Renseigner les deux variables d'environnement ci-dessus (Production + Preview + Development si souhaité).
-3. Lancer le premier déploiement.
-4. Vérifier un pari test (onglet "Faire mon pari" puis onglet "Voir les paris").
-
-### Sécurité / RLS
-
-Les policies actuelles autorisent les inserts anonymes. À restreindre plus tard (ex: via une fonction RPC + captcha) si usage public large.
+1. Configurer les variables d'environnement dans `.env`
+2. Lancer `docker compose up -d`
+3. L'application est accessible sur http://localhost:3000
 
 ---
 

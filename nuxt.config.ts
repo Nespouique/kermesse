@@ -13,11 +13,6 @@ export default defineNuxtConfig({
     gmailUser: process.env.NUXT_GMAIL_USER || '',
     gmailAppPassword: process.env.NUXT_GMAIL_APP_PASSWORD || '',
     notificationEmail: process.env.NUXT_NOTIFICATION_EMAIL || '',
-    // Variables publiques (exposées au client)
-    public: {
-      supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL || '',
-      supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY || '',
-    },
   },
 
   typescript: {

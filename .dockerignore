@@ -1,0 +1,16 @@
+node_modules
+.nuxt
+.output
+.git
+.github
+.env
+.env.*
+!.env.docker.example
+*.md
+.vscode
+.idea
+scripts
+docker
+Dockerfile
+docker-compose.yml
+.dockerignore

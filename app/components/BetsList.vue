@@ -72,7 +72,6 @@
 
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
-  import { useNuxtApp } from '#app'
   import BetsAnalyticsModal from './BetsAnalyticsModal.vue'
 
   interface LayerMeta {
@@ -118,30 +117,14 @@
 
   const emit = defineEmits<{ (e: 'loaded'): void }>()
 
-  type SupabaseClient = import('@supabase/supabase-js').SupabaseClient
-  const { $supabase } = useNuxtApp() as {
-    $supabase: SupabaseClient
-  }
-  if (!$supabase) {
-    // Evite boucle de chargement si supabase non configuré
-    loaded.value = true
-    error.value = 'Supabase non configuré'
-  }
-
   async function fetchBets() {
-    if (!$supabase) return
     loading.value = true
     error.value = null
     try {
-      const { data, error: err } = await $supabase
-        .from('v_bets')
-        .select('*')
-        .order('estimated_date', { ascending: true })
-        .order('is_male', { ascending: false })
-        .order('weight_kg', { ascending: true })
-        .limit(300)
-      if (err) throw err
-      bets.value = data as BetRow[]
+      const data = await $fetch<BetRow[]>('/api/bets', {
+        query: { orderBy: 'estimated_date', limit: 300 }
+      })
+      bets.value = data
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e)
     } finally {

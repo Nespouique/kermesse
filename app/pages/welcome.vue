@@ -412,7 +412,7 @@
 
 <script setup lang="ts">
   import { ref, computed, onMounted, h, resolveComponent } from 'vue'
-  import { useNuxtApp, useState } from '#app'
+  import { useState } from '#app'
   import { useColorMode } from '@vueuse/core'
 
   // Table columns definition for the ranking modal (TanStack Table API)
@@ -492,9 +492,6 @@
   const isMobile = ref(false)
   const tableSorting = ref<{ id: string; desc: boolean }[]>([{ id: 'score', desc: false }])
 
-  // Supabase
-  type SupabaseClient = import('@supabase/supabase-js').SupabaseClient
-  const { $supabase } = useNuxtApp() as { $supabase: SupabaseClient }
 
   // Computed - Podium avec calcul des scores
   // Le classement utilise le score enregistré en base de données (calculé par l'admin)
@@ -858,17 +855,12 @@
       structure.value = await $fetch<StructureJson>('/PigGenerator/structure.json')
 
       // Load baby config
-      if ($supabase) {
-        const { data: configData } = await $supabase.from('app_config').select('*').single()
-        babyConfig.value = configData
+      const configData = await $fetch<BabyConfig>('/api/config')
+      babyConfig.value = configData
 
-        // Load bets
-        const { data: betsData } = await $supabase
-          .from('v_bets')
-          .select('*')
-          .order('created_at', { ascending: true })
-        bets.value = (betsData as BetRow[]) || []
-      }
+      // Load bets
+      const betsData = await $fetch<BetRow[]>('/api/bets')
+      bets.value = betsData || []
     } catch (e) {
       console.error('Error loading data:', e)
     } finally {

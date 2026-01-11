@@ -18,7 +18,7 @@ Les avatars des gagnant doivent être utilisés, et animés en rebondissant pour
 
 # Notes techniques
 
-Utilise les MCP supabase, nuxtui, et les autres connectés quand tu en as besoin.
+Utilise les MCP nuxtui, et les autres connectés quand tu en as besoin.
 Utilise les icones de lucid icon (tu as le mcp pour ça)
 Utilise les composants de base de nuxtui, essaie de ne pas faire de html/css custom.
 Utilise la wireframe Wireframes/podium.excalidraw.png pour comprendre le rendu voulu.

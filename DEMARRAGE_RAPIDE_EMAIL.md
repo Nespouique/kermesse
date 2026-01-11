@@ -100,9 +100,8 @@ Si votre serveur Nuxt est déjà en cours d'exécution, **redémarrez-le** :
 Voici un exemple de fichier `.env` correctement configuré :
 
 ```bash
-# Supabase (déjà configuré)
-NUXT_PUBLIC_SUPABASE_URL=https://wyxmlrjafkmkvzrtxeiy.supabase.co
-NUXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUz...
+# Base de données PostgreSQL
+DATABASE_URL=postgres://kermesse:password@localhost:5432/kermesse
 
 # Gmail (à configurer)
 NUXT_GMAIL_USER=jean.dupont@gmail.com

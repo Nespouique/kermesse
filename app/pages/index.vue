@@ -210,7 +210,7 @@
 
 <script setup lang="ts">
   import { computed, ref, onMounted, watch, nextTick } from 'vue'
-  import { useNuxtApp, useState } from '#app'
+  import { useState } from '#app'
   import { useToast } from '#imports'
   import BabyCountdown from '~/components/BabyCountdown.vue'
   import TicketForm from '~/components/TicketForm.vue'
@@ -516,7 +516,7 @@
     console.log('betData.value après assignation:', betData.value)
   }
 
-  function submitFinalForm() {
+  async function submitFinalForm() {
     if (!userInfo.value.firstName || !userInfo.value.lastName) {
       toast.add({
         title: 'Champs manquants',
@@ -541,143 +541,101 @@
     }
 
     console.log('Pari final soumis:', finalData)
-    // Intégration Supabase
-    type SupabaseClient = import('@supabase/supabase-js').SupabaseClient
-    const { $supabase } = useNuxtApp() as {
-      $supabase: SupabaseClient
-    }
-    if (!$supabase) {
-      toast.add({
-        title: 'Configuration',
-        description: 'Supabase non configuré.',
-        color: 'error',
-      })
-      return
-    }
-    ;(async () => {
+
+    try {
+      submitting.value = true
+      if (!userInfo.value.email) return
+      const participantEmail = userInfo.value.email.trim().toLowerCase()
+      // Normaliser les noms (Jean-Marc / Nom De Famille)
+      const normalizedFirst = normalizeName(userInfo.value.firstName)
+      const normalizedLast = normalizeName(userInfo.value.lastName)
+      // Met à jour l'état local (pour cohérence d'affichage post-submit éventuel)
+      userInfo.value.firstName = normalizedFirst
+      userInfo.value.lastName = normalizedLast
+
+      // Insert participant via API
+      let participantId: string
       try {
-        submitting.value = true
-        // Insert participant (puis select si conflit) pour éviter besoin policy UPDATE
-        if (!userInfo.value.email) return
-        const participantEmail = userInfo.value.email.trim().toLowerCase()
-        let participantId: string | null = null
-        // Normaliser les noms (Jean-Marc / Nom De Famille)
-        const normalizedFirst = normalizeName(userInfo.value.firstName)
-        const normalizedLast = normalizeName(userInfo.value.lastName)
-        // Met à jour l'état local (pour cohérence d'affichage post-submit éventuel)
-        userInfo.value.firstName = normalizedFirst
-        userInfo.value.lastName = normalizedLast
-
-        const { data: inserted, error: insertErr } = await $supabase
-          .from('participants')
-          .insert({
+        const { id } = await $fetch<{ id: string }>('/api/participants', {
+          method: 'POST',
+          body: {
             email: participantEmail,
-            first_name: normalizedFirst,
-            last_name: normalizedLast,
-          })
-          .select('id')
-          .single()
-        if (insertErr) {
-          const ie = insertErr as unknown as { code?: string; message?: string }
-          if (ie.code === '23505') {
-            // Conflit email participant => déjà inscrit => on arrête (pas de tentative bet)
-            toast.add({
-              title: 'Erreur - Email déjà utilisé',
-              description: "Vous ne pouvez faire qu'un seul pari par adresse mail",
-              color: 'error',
-            })
-            return
-          } else if (ie.code === '42501') {
-            toast.add({
-              title: 'Erreur - Accès refusé',
-              description:
-                "Impossible d'enregistrer le participant (RLS). Contactez un administrateur.",
-              color: 'error',
-            })
-            return
-          } else {
-            throw insertErr
-          }
-        } else if (inserted) {
-          participantId = inserted.id
-        }
-        if (!participantId) throw new Error('ID participant manquant')
-
-        // Insert bet (one per participant enforced by db unique constraint)
-        if (!betData.value) throw new Error('Données de pari manquantes')
-
-        interface CalendarLike {
-          year?: number
-          month?: number
-          day?: number
-        }
-        const estimatedDateRaw = betData.value.estimatedDate as unknown as CalendarLike | undefined
-        let dateISO: string | null = null
-        if (
-          estimatedDateRaw &&
-          typeof estimatedDateRaw.year === 'number' &&
-          typeof estimatedDateRaw.month === 'number' &&
-          typeof estimatedDateRaw.day === 'number'
-        ) {
-          const y = estimatedDateRaw.year
-          const m = String(estimatedDateRaw.month).padStart(2, '0')
-          const d = String(estimatedDateRaw.day).padStart(2, '0')
-          dateISO = `${y}-${m}-${d}`
-        }
-        if (!dateISO) throw new Error('Date estimée invalide')
-
-        const { data: bet, error: bErr } = await $supabase
-          .from('bets')
-          .insert({
-            participant_id: participantId,
-            is_male: betData.value.isMale,
-            estimated_date: dateISO,
-            weight_kg: betData.value.weight,
-            baby_first_name: betData.value.firstName || null,
-          })
-          .select()
-          .single()
-        if (bErr) {
-          const errObj = bErr as unknown as { code?: string; message?: string }
-          if (errObj.code === '23505') {
-            toast.add({
-              title: 'Erreur - Email déjà utilisé',
-              description: "Vous ne pouvez faire qu'un seul pari par adresse mail",
-              color: 'error',
-            })
-            return
-          }
-          throw bErr
-        }
-
-        // Insert avatar layers (store just names)
-        const { top, middle, bottom } = avatarSelection.value
-        const { error: aErr } = await $supabase.from('avatars').insert({
-          bet_id: bet.id,
-          top_layer: top?.name || null,
-          middle_layer: middle?.name || null,
-          bottom_layer: bottom?.name || null,
+            firstName: normalizedFirst,
+            lastName: normalizedLast,
+          },
         })
-        if (aErr) throw aErr
+        participantId = id
+      } catch (err: any) {
+        if (err.statusCode === 409) {
+          toast.add({
+            title: 'Erreur - Email déjà utilisé',
+            description: "Vous ne pouvez faire qu'un seul pari par adresse mail",
+            color: 'error',
+          })
+          return
+        }
+        throw err
+      }
 
-        // Construire les layers de l'avatar pour l'email
-        const structure = await $fetch<{
-          base: { width: number; height: number }
-          layers: Array<{
-            name: string
-            x: number
-            y: number
-            width: number
-            height: number
-            z: number
-            category: 'base' | 'top' | 'middle' | 'bottom'
-            goesWith?: string
-          }>
-        }>('/PigGenerator/structure.json')
+      // Insert bet (one per participant enforced by db unique constraint)
+      if (!betData.value) throw new Error('Données de pari manquantes')
 
-        const targetWidth = 120 // Taille pour l'email
-        const scale = targetWidth / structure.base.width
-        const layers: Array<{
+      interface CalendarLike {
+        year?: number
+        month?: number
+        day?: number
+      }
+      const estimatedDateRaw = betData.value.estimatedDate as unknown as CalendarLike | undefined
+      let dateISO: string | null = null
+      if (
+        estimatedDateRaw &&
+        typeof estimatedDateRaw.year === 'number' &&
+        typeof estimatedDateRaw.month === 'number' &&
+        typeof estimatedDateRaw.day === 'number'
+      ) {
+        const y = estimatedDateRaw.year
+        const m = String(estimatedDateRaw.month).padStart(2, '0')
+        const d = String(estimatedDateRaw.day).padStart(2, '0')
+        dateISO = `${y}-${m}-${d}`
+      }
+      if (!dateISO) throw new Error('Date estimée invalide')
+
+      const { top, middle, bottom } = avatarSelection.value
+
+      // Insert bet + avatar via API
+      let bet: { id: string }
+      try {
+        bet = await $fetch<{ id: string }>('/api/bets', {
+          method: 'POST',
+          body: {
+            participantId,
+            isMale: betData.value.isMale,
+            estimatedDate: dateISO,
+            weightKg: betData.value.weight,
+            babyFirstName: betData.value.firstName || null,
+            avatar: {
+              topLayer: top?.name || null,
+              middleLayer: middle?.name || null,
+              bottomLayer: bottom?.name || null,
+            },
+          },
+        })
+      } catch (err: any) {
+        if (err.statusCode === 409) {
+          toast.add({
+            title: 'Erreur - Email déjà utilisé',
+            description: "Vous ne pouvez faire qu'un seul pari par adresse mail",
+            color: 'error',
+          })
+          return
+        }
+        throw err
+      }
+
+      // Construire les layers de l'avatar pour l'email
+      const structure = await $fetch<{
+        base: { width: number; height: number }
+        layers: Array<{
           name: string
           x: number
           y: number
@@ -686,95 +644,108 @@
           z: number
           category: 'base' | 'top' | 'middle' | 'bottom'
           goesWith?: string
-        }> = []
-        const pushed = new Set<string>()
+        }>
+      }>('/PigGenerator/structure.json')
 
-        function pushLayer(layerName: string | null) {
-          if (!layerName) return
-          const meta = structure.layers.find((l) => l.name === layerName)
-          if (!meta || pushed.has(meta.name)) return
-          pushed.add(meta.name)
-          layers.push(meta)
-          if (meta.goesWith) {
-            const companion = structure.layers.find((l) => l.name === meta.goesWith)
-            if (companion && !pushed.has(companion.name)) {
-              pushed.add(companion.name)
-              layers.push(companion)
-            }
+      const targetWidth = 120 // Taille pour l'email
+      const scale = targetWidth / structure.base.width
+      const layers: Array<{
+        name: string
+        x: number
+        y: number
+        width: number
+        height: number
+        z: number
+        category: 'base' | 'top' | 'middle' | 'bottom'
+        goesWith?: string
+      }> = []
+      const pushed = new Set<string>()
+
+      function pushLayer(layerName: string | null) {
+        if (!layerName) return
+        const meta = structure.layers.find((l) => l.name === layerName)
+        if (!meta || pushed.has(meta.name)) return
+        pushed.add(meta.name)
+        layers.push(meta)
+        if (meta.goesWith) {
+          const companion = structure.layers.find((l) => l.name === meta.goesWith)
+          if (companion && !pushed.has(companion.name)) {
+            pushed.add(companion.name)
+            layers.push(companion)
           }
         }
-
-        // Base layers
-        structure.layers
-          .filter((l) => l.category === 'base')
-          .forEach((l) => {
-            if (!pushed.has(l.name)) {
-              pushed.add(l.name)
-              layers.push(l)
-            }
-          })
-
-        // Selected layers
-        pushLayer(middle?.name || null)
-        pushLayer(top?.name || null)
-        pushLayer(bottom?.name || null)
-
-        layers.sort((a, b) => a.z - b.z)
-
-        const avatarLayers = layers.map((l) => ({
-          key: l.name,
-          src: `/PigGenerator/${
-            l.category === 'base'
-              ? 'Base'
-              : l.category === 'top'
-                ? 'Top'
-                : l.category === 'middle'
-                  ? 'Middle'
-                  : 'Bottom'
-          }/${l.name}.svg`,
-          width: l.width * scale,
-          height: l.height * scale,
-          left: l.x * scale - (l.width * scale) / 2,
-          top: l.y * scale - (l.height * scale) / 2,
-          z: l.z,
-        }))
-
-        // Envoi de la notification par email
-        try {
-          await $fetch('/api/send-notification', {
-            method: 'POST',
-            body: {
-              participantName: `${normalizedFirst} ${normalizedLast}`,
-              participantEmail: participantEmail,
-              betDetails: {
-                isMale: betData.value.isMale,
-                estimatedDate: dateISO,
-                weight: betData.value.weight,
-                firstName: betData.value.firstName || null,
-              },
-              avatarLayers,
-            },
-          })
-          console.log('Notification email envoyée avec succès')
-        } catch (emailErr) {
-          console.error("Erreur lors de l'envoi de la notification:", emailErr)
-          // On ne bloque pas le flow si l'email échoue
-        }
-
-        showSuccessModal.value = true
-        resetForm()
-      } catch (err) {
-        console.error(err)
-        toast.add({
-          title: 'Erreur',
-          description:
-            err instanceof Error ? err.message : "Erreur inconnue lors de l'enregistrement",
-          color: 'error',
-        })
-      } finally {
-        submitting.value = false
       }
-    })()
+
+      // Base layers
+      structure.layers
+        .filter((l) => l.category === 'base')
+        .forEach((l) => {
+          if (!pushed.has(l.name)) {
+            pushed.add(l.name)
+            layers.push(l)
+          }
+        })
+
+      // Selected layers
+      pushLayer(middle?.name || null)
+      pushLayer(top?.name || null)
+      pushLayer(bottom?.name || null)
+
+      layers.sort((a, b) => a.z - b.z)
+
+      const avatarLayers = layers.map((l) => ({
+        key: l.name,
+        src: `/PigGenerator/${
+          l.category === 'base'
+            ? 'Base'
+            : l.category === 'top'
+              ? 'Top'
+              : l.category === 'middle'
+                ? 'Middle'
+                : 'Bottom'
+        }/${l.name}.svg`,
+        width: l.width * scale,
+        height: l.height * scale,
+        left: l.x * scale - (l.width * scale) / 2,
+        top: l.y * scale - (l.height * scale) / 2,
+        z: l.z,
+      }))
+
+      // Envoi de la notification par email
+      try {
+        await $fetch('/api/send-notification', {
+          method: 'POST',
+          body: {
+            participantName: `${normalizedFirst} ${normalizedLast}`,
+            participantEmail: participantEmail,
+            betDetails: {
+              isMale: betData.value.isMale,
+              estimatedDate: dateISO,
+              weight: betData.value.weight,
+              firstName: betData.value.firstName || null,
+            },
+            avatarLayers,
+          },
+        })
+        console.log('Notification email envoyée avec succès')
+      } catch (emailErr) {
+        console.error("Erreur lors de l'envoi de la notification:", emailErr)
+        // On ne bloque pas le flow si l'email échoue
+      }
+
+      showSuccessModal.value = true
+      resetForm()
+    } catch (err) {
+      console.error(err)
+      toast.add({
+        title: 'Erreur',
+        description:
+          err instanceof Error ? err.message : "Erreur inconnue lors de l'enregistrement",
+        color: 'error',
+      })
+    } finally {
+      submitting.value = false
+    }
   }
 
   function goToParisTab() {

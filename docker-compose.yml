@@ -1,0 +1,36 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://kermesse:${DB_PASSWORD}@db:5432/kermesse
+      - NUXT_ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - NUXT_GMAIL_USER=${GMAIL_USER}
+      - NUXT_GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
+      - NUXT_NOTIFICATION_EMAIL=${NOTIFICATION_EMAIL}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:17-alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    environment:
+      - POSTGRES_DB=kermesse
+      - POSTGRES_USER=kermesse
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kermesse"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

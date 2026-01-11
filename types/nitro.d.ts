@@ -14,10 +14,6 @@ declare global {
     gmailUser: string
     gmailAppPassword: string
     notificationEmail: string
-    public: {
-      supabaseUrl: string
-      supabaseAnonKey: string
-    }
   }
 
   function createError(options: {

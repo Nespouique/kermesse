@@ -6,23 +6,12 @@ export default defineNuxtRouteMiddleware(async (to, _from) => {
   const birthCheckDone = useState<boolean>('birthCheckDone', () => false)
   const isBornState = useState<boolean | null>('isBorn', () => null)
 
-  // Client-side only check because supabase plugin is client-only
+  // Client-side only check
   if (import.meta.client) {
-    const { $supabase } = useNuxtApp()
-    if (!$supabase) {
-      birthCheckDone.value = true
-      return
-    }
-
     try {
-      const { data, error } = await $supabase.from('app_config').select('is_born').single()
+      const config = await $fetch<{ is_born: boolean }>('/api/config')
 
-      if (error) {
-        birthCheckDone.value = true
-        return
-      }
-
-      const isBorn = data?.is_born
+      const isBorn = config?.is_born
       isBornState.value = isBorn
       birthCheckDone.value = true
 

@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import { defineEventHandler, readBody, createError } from "h3";
-import { createClient } from "@supabase/supabase-js";
+import { sql } from "../utils/db";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -17,19 +17,6 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Créer le client Supabase côté serveur
-  const supabaseUrl = config.public.supabaseUrl as string;
-  const supabaseKey = config.public.supabaseAnonKey as string;
-
-  if (!supabaseUrl || !supabaseKey) {
-    throw createError({
-      statusCode: 500,
-      message: "Configuration Supabase manquante",
-    });
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
   try {
     // Récupérer les emails des participants
     let recipientEmails: string[] = [];
@@ -43,30 +30,21 @@ export default defineEventHandler(async (event) => {
       console.log("📧 Mode TEST - Envoi à:", recipientEmails);
     } else {
       // Mode production : tous les emails uniques des parieurs via la table participants
-      console.log("📧 Mode PRODUCTION - Récupération des emails depuis Supabase...");
+      console.log("📧 Mode PRODUCTION - Récupération des emails depuis PostgreSQL...");
 
-      const { data: bets, error: fetchError } = await supabase
-        .from("bets")
-        .select("participant_id, participants(email)")
-        .not("participant_id", "is", null);
+      const participants = await sql<{ email: string }[]>`
+        SELECT DISTINCT p.email
+        FROM participants p
+        INNER JOIN bets b ON b.participant_id = p.id
+        WHERE p.email IS NOT NULL
+      `;
 
-      console.log("📧 Résultat requête Supabase:");
-      console.log("📧 - Erreur:", fetchError);
-      console.log("📧 - Nombre de bets récupérés:", bets?.length ?? 0);
-      console.log("📧 - Premiers bets (sample):", JSON.stringify(bets?.slice(0, 5)));
+      console.log("📧 Nombre de participants récupérés:", participants.length);
 
-      if (fetchError) throw fetchError;
+      recipientEmails = participants
+        .map((p) => p.email.trim().toLowerCase())
+        .filter((email) => email.length > 0);
 
-      // Extraire les emails uniques depuis la relation participants
-      const uniqueEmails = new Set<string>();
-      for (const bet of bets || []) {
-        const participant = bet.participants as unknown as { email: string } | null;
-        const email = participant?.email;
-        if (email && typeof email === "string" && email.trim()) {
-          uniqueEmails.add(email.trim().toLowerCase());
-        }
-      }
-      recipientEmails = Array.from(uniqueEmails);
       console.log("📧 Emails uniques trouvés:", recipientEmails.length);
       console.log("📧 Liste des emails:", JSON.stringify(recipientEmails));
     }

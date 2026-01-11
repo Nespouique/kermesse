@@ -347,11 +347,10 @@
 
 <script setup lang="ts">
   import { ref, computed, onMounted } from 'vue'
-  import { useNuxtApp, useState } from '#app'
+  import { useState } from '#app'
   import { useToast } from '#imports'
 
   const toast = useToast()
-  const { $supabase } = useNuxtApp()
 
   // Auth
   const isAuthenticated = useState('isAuthenticated', () => false)
@@ -469,10 +468,15 @@
   const saving = ref(false)
 
   async function fetchConfig() {
-    if (!$supabase) return
     try {
-      const { data, error } = await $supabase.from('app_config').select('*').single()
-      if (error && error.code !== 'PGRST116') throw error // PGRST116 is "The result contains 0 rows"
+      const data = await $fetch<{
+        is_born: boolean
+        baby_name: string | null
+        birth_date: string | null
+        weight_kg: number | null
+        height_cm: number | null
+        sex: string | null
+      }>('/api/config')
 
       if (data) {
         const dateObj = data.birth_date ? new Date(data.birth_date) : new Date()
@@ -512,117 +516,15 @@
     actualWeightKg: number,
     actualSex: string
   ) {
-    if (!$supabase) return
-
-    // Récupérer tous les paris
-    const { data: bets, error: fetchError } = await $supabase
-      .from('bets')
-      .select('id, estimated_date, weight_kg, is_male, created_at')
-      .order('created_at', { ascending: true })
-
-    if (fetchError) throw fetchError
-    if (!bets || bets.length === 0) return
-
-    const actualDate = new Date(birthDate)
-    const actualWeightGrams = actualWeightKg * 1000 // Convertir en grammes
-
-    // Calculer les écarts bruts pour chaque participant
-    const betsWithDiffs = (bets as BetForScoring[]).map((bet) => {
-      const betDate = new Date(bet.estimated_date)
-      // Écart de date en jours (ignorer l'heure)
-      const ecartDate = Math.abs(
-        Math.floor((actualDate.getTime() - betDate.getTime()) / (1000 * 60 * 60 * 24))
-      )
-
-      // Écart de poids arrondi aux 100g (car les paris se font par tranches de 100g)
-      const betWeightGrams = Number(bet.weight_kg) * 1000
-      const ecartPoidsExact = Math.abs(actualWeightGrams - betWeightGrams)
-      const ecartPoids = Math.round(ecartPoidsExact / 100) // Nombre de tranches de 100g d'écart
-
-      // Vérification du sexe
-      const betSex = bet.is_male ? 'M' : 'F'
-      const sexeCorrect = betSex === actualSex
-
-      return {
-        id: bet.id,
-        ecartDate,
-        ecartPoids,
-        sexeCorrect,
-        createdAt: new Date(bet.created_at).getTime(),
-      }
+    // Call the scores API endpoint
+    await $fetch('/api/scores', {
+      method: 'POST',
+      body: {
+        birthDate,
+        weightKg: actualWeightKg,
+        sex: actualSex,
+      },
     })
-
-    // Classement sur la date (rang avec égalités)
-    const sortedByDate = [...betsWithDiffs].sort((a, b) => a.ecartDate - b.ecartDate)
-    const rangDate: Record<string, number> = {}
-    let currentRank = 1
-    for (let i = 0; i < sortedByDate.length; i++) {
-      const current = sortedByDate[i]
-      const previous = sortedByDate[i - 1]
-      if (current && i > 0 && previous && current.ecartDate !== previous.ecartDate) {
-        currentRank = i + 1
-      }
-      if (current) {
-        rangDate[current.id] = currentRank
-      }
-    }
-
-    // Classement sur le poids (rang avec égalités)
-    const sortedByWeight = [...betsWithDiffs].sort((a, b) => a.ecartPoids - b.ecartPoids)
-    const rangPoids: Record<string, number> = {}
-    currentRank = 1
-    for (let i = 0; i < sortedByWeight.length; i++) {
-      const current = sortedByWeight[i]
-      const previous = sortedByWeight[i - 1]
-      if (current && i > 0 && previous && current.ecartPoids !== previous.ecartPoids) {
-        currentRank = i + 1
-      }
-      if (current) {
-        rangPoids[current.id] = currentRank
-      }
-    }
-
-    // Classement sur le sexe: correct = 1, incorrect = K + 1
-    // où K = nombre de parieurs ayant trouvé le bon sexe
-    const rangSexe: Record<string, number> = {}
-    const N = betsWithDiffs.length // Nombre total de parieurs
-    const K = betsWithDiffs.filter((bet) => bet.sexeCorrect).length // Nombre ayant le bon sexe
-    const rangIncorrect = K + 1
-    for (const bet of betsWithDiffs) {
-      rangSexe[bet.id] = bet.sexeCorrect ? 1 : rangIncorrect
-    }
-
-    // Calcul du score final avec pondérations dynamiques:
-    // Score = (K + 2) * (N + 1) * rang_date + (N + 1) * rang_sexe + rang_poids
-    // Hiérarchie garantie: Date > Sexe > Poids
-    const betsWithScores = betsWithDiffs.map((bet) => ({
-      id: bet.id,
-      score:
-        (K + 2) * (N + 1) * (rangDate[bet.id] ?? 0) +
-        (N + 1) * (rangSexe[bet.id] ?? 0) +
-        (rangPoids[bet.id] ?? 0),
-      rangDate: rangDate[bet.id] ?? 0,
-      rangPoids: rangPoids[bet.id] ?? 0,
-      rangSexe: rangSexe[bet.id] ?? 0,
-      createdAt: bet.createdAt,
-    }))
-
-    // Mettre à jour les scores et rangs dans la base de données
-    for (const bet of betsWithScores) {
-      const { error: updateError } = await $supabase
-        .from('bets')
-        .update({
-          score: bet.score,
-          rang_date: bet.rangDate,
-          rang_poids: bet.rangPoids,
-          rang_sexe: bet.rangSexe,
-        })
-        .eq('id', bet.id)
-
-      if (updateError) {
-        console.error(`Erreur lors de la mise à jour du score pour ${bet.id}:`, updateError)
-      }
-    }
   }
 
   // Fonction pour recalculer les scores manuellement
@@ -672,18 +574,17 @@
         birthDateISO = date.toISOString()
       }
 
-      const payload = {
-        id: 1, // Force ID 1
-        is_born: babyConfig.value.is_born,
-        baby_name: babyConfig.value.baby_name,
-        birth_date: birthDateISO,
-        weight_kg: babyConfig.value.weight_kg,
-        height_cm: babyConfig.value.height_cm,
-        sex: babyConfig.value.sex,
-      }
-
-      const { error } = await $supabase.from('app_config').upsert(payload)
-      if (error) throw error
+      await $fetch('/api/config', {
+        method: 'PUT',
+        body: {
+          isBorn: babyConfig.value.is_born,
+          babyName: babyConfig.value.baby_name,
+          birthDate: birthDateISO,
+          weightKg: babyConfig.value.weight_kg,
+          heightCm: babyConfig.value.height_cm,
+          sex: babyConfig.value.sex,
+        },
+      })
 
       // Si le bébé est né, calculer et enregistrer les scores
       if (
