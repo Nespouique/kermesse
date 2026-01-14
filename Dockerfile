@@ -1,33 +1,43 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:20-alpine AS build
+
 WORKDIR /app
 
-# Install dependencies
-COPY package.json package-lock.json ./
+# Copy package files
+COPY package*.json ./
 COPY prisma ./prisma/
-RUN npm install --legacy-peer-deps
 
-# Generate Prisma Client
+# Install dependencies
+RUN npm ci --legacy-peer-deps
+
+# Generate Prisma client
 RUN npx prisma generate
 
-# Copy source and build
+# Copy source code
 COPY . .
+
+# Build Nuxt
 RUN npm run build
 
 # Production stage
-FROM node:20-alpine
+FROM node:20-alpine AS production
+
 WORKDIR /app
 
-# Copy built output
-COPY --from=builder /app/.output ./.output
+# Copy package files and install production dependencies
+COPY package*.json ./
+RUN npm ci --omit=dev --legacy-peer-deps
 
-# Copy Prisma files for Prisma Studio
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/prisma ./prisma
+# Copy Prisma schema and generated client
+COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 
-ENV NODE_ENV=production
+# Copy built Nuxt output
+COPY --from=build /app/.output ./.output
+
+# Expose port
 EXPOSE 3000
 
+# Start server
 CMD ["node", ".output/server/index.mjs"]
