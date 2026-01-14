@@ -17,7 +17,11 @@
     "prisma:studio": "prisma studio --port 5555",
     "prisma:migrate": "prisma migrate dev",
     "prisma:db:pull": "prisma db pull",
-    "prisma:db:push": "prisma db push"
+    "prisma:db:push": "prisma db push",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:unit": "vitest --project unit",
+    "test:nuxt": "vitest --project nuxt"
   },
   "dependencies": {
     "@nuxt/eslint": "^1.7.0",
@@ -41,10 +45,12 @@
   },
   "devDependencies": {
     "@types/nodemailer": "^7.0.2",
+    "@vue/test-utils": "^2.4.6",
     "dotenv": "^17.2.3",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "prettier": "^3.6.2",
-    "prisma": "^7.2.0"
+    "prisma": "^7.2.0",
+    "vitest": "^3.2.4"
   }
 }
