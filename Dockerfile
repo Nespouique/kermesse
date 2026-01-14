@@ -24,9 +24,9 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
-# Copy package files and install production dependencies
+# Copy package files and install production dependencies (skip postinstall)
 COPY package*.json ./
-RUN npm ci --omit=dev --legacy-peer-deps
+RUN npm ci --omit=dev --legacy-peer-deps --ignore-scripts
 
 # Copy Prisma schema and generated client
 COPY --from=build /app/prisma ./prisma
