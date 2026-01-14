@@ -29,6 +29,7 @@ COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/server/generated ./server/generated
 COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=build /app/node_modules/prisma ./node_modules/prisma
+COPY --from=build /app/node_modules/valibot ./node_modules/valibot
 
 # Copy built Nuxt output
 COPY --from=build /app/.output ./.output
