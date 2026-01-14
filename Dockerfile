@@ -8,11 +8,14 @@ COPY package*.json ./
 COPY prisma ./prisma/
 COPY prisma.config.ts ./
 
-# Install dependencies
-RUN npm ci --legacy-peer-deps
+# Install dependencies (ignore scripts to avoid prisma generate needing DATABASE_URL)
+RUN npm ci --legacy-peer-deps --ignore-scripts
 
-# Generate Prisma client (Prisma 7 uses JS adapter, no binary needed)
-RUN npx prisma generate
+# Manually run nuxt prepare
+RUN npx nuxt prepare
+
+# Generate Prisma client with a dummy DATABASE_URL (only needed for schema parsing)
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma generate
 
 # Copy source code
 COPY . .
