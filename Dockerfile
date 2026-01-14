@@ -6,6 +6,7 @@ WORKDIR /app
 # Copy package files and prisma config
 COPY package*.json ./
 COPY prisma ./prisma/
+COPY prisma.config.ts ./
 
 # Install dependencies
 RUN npm ci --legacy-peer-deps
@@ -26,6 +27,7 @@ WORKDIR /app
 
 # Copy Prisma schema, config and generated client from build
 COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/prisma.config.ts ./prisma.config.ts
 COPY --from=build /app/server/generated ./server/generated
 # Copy all node_modules for Prisma Studio dependencies
 COPY --from=build /app/node_modules ./node_modules
