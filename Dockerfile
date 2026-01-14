@@ -27,9 +27,8 @@ WORKDIR /app
 # Copy Prisma schema, config and generated client from build
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/server/generated ./server/generated
-COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=build /app/node_modules/prisma ./node_modules/prisma
-COPY --from=build /app/node_modules/valibot ./node_modules/valibot
+# Copy all node_modules for Prisma Studio dependencies
+COPY --from=build /app/node_modules ./node_modules
 
 # Copy built Nuxt output
 COPY --from=build /app/.output ./.output
