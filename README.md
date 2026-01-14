@@ -23,8 +23,7 @@
 
 - **[Nuxt 4](https://nuxt.com/)** (Vue 3) — Framework principal pour le frontend.
 - **[Tailwind CSS](https://tailwindcss.com/)** — Pour le style utilitaire et la responsivité.
-- **[Nuxt UI](https://ui.nuxt.com/)** — Composants UI prêts à l’emploi.
-- **PostgreSQL** — Base de données relationnelle pour la persistance des paris.
+- **[Nuxt UI](https://ui.nuxt.com/)** — Composants UI prêts à l’emploi.- **[Prisma 7](https://www.prisma.io/)** — ORM moderne pour PostgreSQL avec typage TypeScript complet.- **PostgreSQL** — Base de données relationnelle pour la persistance des paris.
 - **[VueUse](https://vueuse.org/)** — Utilitaires Vue 3 (gestion des breakpoints, color mode, etc).
 - **[Lucide Icons](https://lucide.dev/icons/)** — Icônes SVG modernes.
 - **ESLint** — Linting et qualité du code.
