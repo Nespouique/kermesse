@@ -3,6 +3,9 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
+# Install OpenSSL for Prisma to detect the correct version
+RUN apk add --no-cache openssl openssl-dev
+
 # Copy package files
 COPY package*.json ./
 COPY prisma ./prisma/
@@ -10,7 +13,8 @@ COPY prisma ./prisma/
 # Install dependencies
 RUN npm ci --legacy-peer-deps
 
-# Generate Prisma client
+# Generate Prisma client with explicit OpenSSL 3 target
+ENV PRISMA_CLI_BINARY_TARGETS=linux-musl-openssl-3.0.x
 RUN npx prisma generate
 
 # Copy source code
@@ -24,14 +28,10 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
-# Install OpenSSL for Prisma
+# Install OpenSSL 3 for Prisma runtime
 RUN apk add --no-cache openssl
 
-# Copy package files and install production dependencies (skip postinstall)
-COPY package*.json ./
-RUN npm ci --omit=dev --legacy-peer-deps --ignore-scripts
-
-# Copy Prisma schema and generated client
+# Copy Prisma schema and generated client from build
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
