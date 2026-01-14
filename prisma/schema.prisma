@@ -1,0 +1,70 @@
+// Prisma Schema for Kermesse du Bébé
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Participant {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String   @unique
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  bet       Bet?
+
+  @@map("participants")
+}
+
+model Bet {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  participantId String    @unique @map("participant_id") @db.Uuid
+  isMale        Boolean   @map("is_male")
+  estimatedDate DateTime  @map("estimated_date") @db.Date
+  weightKg      Decimal   @map("weight_kg") @db.Decimal
+  babyFirstName String?   @map("baby_first_name")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  score         Int?
+  rangDate      Int?      @map("rang_date")
+  rangPoids     Int?      @map("rang_poids")
+  rangSexe      Int?      @map("rang_sexe")
+
+  participant Participant @relation(fields: [participantId], references: [id])
+  avatar      Avatar?
+
+  @@map("bets")
+}
+
+model Avatar {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  betId       String   @unique @map("bet_id") @db.Uuid
+  topLayer    String?  @map("top_layer")
+  middleLayer String?  @map("middle_layer")
+  bottomLayer String?  @map("bottom_layer")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  bet Bet @relation(fields: [betId], references: [id])
+
+  @@map("avatars")
+}
+
+model AppConfig {
+  id        Int       @id @default(1)
+  isBorn    Boolean   @default(false) @map("is_born")
+  babyName  String?   @map("baby_name")
+  birthDate DateTime? @map("birth_date") @db.Timestamptz()
+  weightKg  Decimal?  @map("weight_kg") @db.Decimal
+  heightCm  Decimal?  @map("height_cm") @db.Decimal
+  sex       String?
+
+  @@map("app_config")
+}
+
+// Vue v_bets - exposée en lecture seule
+// Prisma ne supporte pas nativement les vues, on utilise une raw query ou on la définit comme modèle
+// Pour l'instant, on utilisera des requêtes avec include pour les jointures

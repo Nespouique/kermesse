@@ -1,10 +1,10 @@
-import { sql } from '../utils/db'
+import { prisma } from '../utils/prisma'
 
 export default defineEventHandler(async () => {
   try {
-    const [config] = await sql`
-      SELECT * FROM app_config WHERE id = 1
-    `
+    const config = await prisma.appConfig.findUnique({
+      where: { id: 1 }
+    })
 
     if (!config) {
       // Return default config if none exists
@@ -19,7 +19,16 @@ export default defineEventHandler(async () => {
       }
     }
 
-    return config
+    // Transform to snake_case for frontend compatibility
+    return {
+      id: config.id,
+      is_born: config.isBorn,
+      baby_name: config.babyName,
+      birth_date: config.birthDate,
+      weight_kg: config.weightKg,
+      height_cm: config.heightCm,
+      sex: config.sex
+    }
   } catch (error) {
     console.error('Error fetching config:', error)
     throw createError({

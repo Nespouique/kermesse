@@ -1,4 +1,4 @@
-import { sql } from '../utils/db'
+import { prisma } from '../utils/prisma'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -6,22 +6,54 @@ export default defineEventHandler(async (event) => {
   const limit = parseInt(query.limit as string) || 300
 
   try {
-    // Dynamic ordering based on query params
-    let bets
-    if (orderBy === 'estimated_date') {
-      bets = await sql`
-        SELECT * FROM v_bets
-        ORDER BY estimated_date ASC, is_male DESC, weight_kg ASC
-        LIMIT ${limit}
-      `
-    } else {
-      bets = await sql`
-        SELECT * FROM v_bets
-        ORDER BY created_at ASC
-        LIMIT ${limit}
-      `
-    }
-    return bets
+    // Fetch bets with participant and avatar relations (replaces v_bets view)
+    const bets = await prisma.bet.findMany({
+      take: limit,
+      orderBy: orderBy === 'estimated_date' 
+        ? [
+            { estimatedDate: 'asc' },
+            { isMale: 'desc' },
+            { weightKg: 'asc' }
+          ]
+        : { createdAt: 'asc' },
+      include: {
+        participant: {
+          select: {
+            email: true,
+            firstName: true,
+            lastName: true
+          }
+        },
+        avatar: {
+          select: {
+            topLayer: true,
+            middleLayer: true,
+            bottomLayer: true
+          }
+        }
+      }
+    })
+
+    // Transform to match v_bets view format for frontend compatibility
+    return bets.map(bet => ({
+      id: bet.id,
+      participant_id: bet.participantId,
+      is_male: bet.isMale,
+      estimated_date: bet.estimatedDate,
+      weight_kg: bet.weightKg,
+      baby_first_name: bet.babyFirstName,
+      created_at: bet.createdAt,
+      score: bet.score,
+      rang_date: bet.rangDate,
+      rang_poids: bet.rangPoids,
+      rang_sexe: bet.rangSexe,
+      email: bet.participant.email,
+      participant_first_name: bet.participant.firstName,
+      participant_last_name: bet.participant.lastName,
+      top_layer: bet.avatar?.topLayer || null,
+      middle_layer: bet.avatar?.middleLayer || null,
+      bottom_layer: bet.avatar?.bottomLayer || null
+    }))
   } catch (error) {
     console.error('Error fetching bets:', error)
     throw createError({

@@ -7,12 +7,17 @@
     "dev": "npx nuxi dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
+    "postinstall": "nuxt prepare && prisma generate",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:email": "node scripts/test-email-config.mjs"
+    "test:email": "node scripts/test-email-config.mjs",
+    "prisma:generate": "prisma generate",
+    "prisma:studio": "prisma studio --port 5555",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:db:pull": "prisma db pull",
+    "prisma:db:push": "prisma db push"
   },
   "dependencies": {
     "@nuxt/eslint": "^1.7.0",
@@ -20,6 +25,7 @@
     "@nuxt/scripts": "^0.11.10",
     "@nuxt/test-utils": "^3.19.2",
     "@nuxt/ui": "^3.2.0",
+    "@prisma/client": "^5.22.0",
     "@unhead/vue": "^2.0.12",
     "canvas-confetti": "^1.9.3",
     "chart.js": "^4.4.4",
@@ -28,7 +34,6 @@
     "lucide-vue-next": "^0.525.0",
     "nodemailer": "^7.0.9",
     "nuxt": "^4.0.1",
-    "postgres": "^3.4.8",
     "typescript": "^5.8.3",
     "vue": "^3.5.17",
     "vue-chartjs": "^5.3.1",
@@ -39,6 +44,7 @@
     "dotenv": "^17.2.3",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
-    "prettier": "^3.6.2"
+    "prettier": "^3.6.2",
+    "prisma": "^5.22.0"
   }
 }

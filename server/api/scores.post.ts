@@ -1,12 +1,4 @@
-import { sql } from '../utils/db'
-
-interface BetForScoring {
-  id: string
-  estimated_date: string
-  weight_kg: number
-  is_male: boolean
-  created_at: string
-}
+import { prisma } from '../utils/prisma'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -21,11 +13,16 @@ export default defineEventHandler(async (event) => {
 
   try {
     // Récupérer tous les paris
-    const bets = await sql<BetForScoring[]>`
-      SELECT id, estimated_date, weight_kg, is_male, created_at
-      FROM bets
-      ORDER BY created_at ASC
-    `
+    const bets = await prisma.bet.findMany({
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true,
+        estimatedDate: true,
+        weightKg: true,
+        isMale: true,
+        createdAt: true
+      }
+    })
 
     if (bets.length === 0) {
       return { message: 'Aucun pari à scorer', count: 0 }
@@ -36,16 +33,16 @@ export default defineEventHandler(async (event) => {
 
     // Calculer les écarts bruts pour chaque participant
     const betsWithDiffs = bets.map((bet) => {
-      const betDate = new Date(bet.estimated_date)
+      const betDate = new Date(bet.estimatedDate)
       const ecartDate = Math.abs(
         Math.floor((actualDate.getTime() - betDate.getTime()) / (1000 * 60 * 60 * 24))
       )
 
-      const betWeightGrams = Number(bet.weight_kg) * 1000
+      const betWeightGrams = Number(bet.weightKg) * 1000
       const ecartPoidsExact = Math.abs(actualWeightGrams - betWeightGrams)
       const ecartPoids = Math.round(ecartPoidsExact / 100)
 
-      const betSex = bet.is_male ? 'M' : 'F'
+      const betSex = bet.isMale ? 'M' : 'F'
       const sexeCorrect = betSex === sex
 
       return {
@@ -53,7 +50,7 @@ export default defineEventHandler(async (event) => {
         ecartDate,
         ecartPoids,
         sexeCorrect,
-        createdAt: new Date(bet.created_at).getTime(),
+        createdAt: new Date(bet.createdAt).getTime(),
       }
     })
 
@@ -108,17 +105,20 @@ export default defineEventHandler(async (event) => {
       rangSexe: rangSexe[bet.id] ?? 0,
     }))
 
-    // Mettre à jour les scores dans la base de données
-    for (const bet of betsWithScores) {
-      await sql`
-        UPDATE bets
-        SET score = ${bet.score},
-            rang_date = ${bet.rangDate},
-            rang_poids = ${bet.rangPoids},
-            rang_sexe = ${bet.rangSexe}
-        WHERE id = ${bet.id}
-      `
-    }
+    // Mettre à jour les scores dans la base de données avec une transaction
+    await prisma.$transaction(
+      betsWithScores.map((bet) =>
+        prisma.bet.update({
+          where: { id: bet.id },
+          data: {
+            score: bet.score,
+            rangDate: bet.rangDate,
+            rangPoids: bet.rangPoids,
+            rangSexe: bet.rangSexe
+          }
+        })
+      )
+    )
 
     return { message: 'Scores calculés', count: betsWithScores.length }
   } catch (error) {

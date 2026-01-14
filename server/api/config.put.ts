@@ -1,4 +1,4 @@
-import { sql } from '../utils/db'
+import { prisma } from '../utils/prisma'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -6,20 +6,37 @@ export default defineEventHandler(async (event) => {
 
   try {
     // Upsert config (insert or update)
-    const [config] = await sql`
-      INSERT INTO app_config (id, is_born, baby_name, birth_date, weight_kg, height_cm, sex)
-      VALUES (1, ${isBorn ?? false}, ${babyName || null}, ${birthDate || null}, ${weightKg || null}, ${heightCm || null}, ${sex || null})
-      ON CONFLICT (id) DO UPDATE SET
-        is_born = EXCLUDED.is_born,
-        baby_name = EXCLUDED.baby_name,
-        birth_date = EXCLUDED.birth_date,
-        weight_kg = EXCLUDED.weight_kg,
-        height_cm = EXCLUDED.height_cm,
-        sex = EXCLUDED.sex
-      RETURNING *
-    `
+    const config = await prisma.appConfig.upsert({
+      where: { id: 1 },
+      update: {
+        isBorn: isBorn ?? false,
+        babyName: babyName || null,
+        birthDate: birthDate ? new Date(birthDate) : null,
+        weightKg: weightKg || null,
+        heightCm: heightCm || null,
+        sex: sex || null
+      },
+      create: {
+        id: 1,
+        isBorn: isBorn ?? false,
+        babyName: babyName || null,
+        birthDate: birthDate ? new Date(birthDate) : null,
+        weightKg: weightKg || null,
+        heightCm: heightCm || null,
+        sex: sex || null
+      }
+    })
 
-    return config
+    // Transform to snake_case for frontend compatibility
+    return {
+      id: config.id,
+      is_born: config.isBorn,
+      baby_name: config.babyName,
+      birth_date: config.birthDate,
+      weight_kg: config.weightKg,
+      height_cm: config.heightCm,
+      sex: config.sex
+    }
   } catch (error) {
     console.error('Error updating config:', error)
     throw createError({

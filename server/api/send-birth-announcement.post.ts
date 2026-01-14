@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import { defineEventHandler, readBody, createError } from "h3";
-import { sql } from "../utils/db";
+import { prisma } from "../utils/prisma";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -32,12 +32,17 @@ export default defineEventHandler(async (event) => {
       // Mode production : tous les emails uniques des parieurs via la table participants
       console.log("📧 Mode PRODUCTION - Récupération des emails depuis PostgreSQL...");
 
-      const participants = await sql<{ email: string }[]>`
-        SELECT DISTINCT p.email
-        FROM participants p
-        INNER JOIN bets b ON b.participant_id = p.id
-        WHERE p.email IS NOT NULL
-      `;
+      const participants = await prisma.participant.findMany({
+        where: {
+          bet: {
+            isNot: null
+          }
+        },
+        select: {
+          email: true
+        },
+        distinct: ['email']
+      });
 
       console.log("📧 Nombre de participants récupérés:", participants.length);
 

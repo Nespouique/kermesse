@@ -1,4 +1,4 @@
-import { sql } from '../utils/db'
+import { prisma } from '../utils/prisma'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -12,24 +12,28 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    // Insert bet
-    const [bet] = await sql`
-      INSERT INTO bets (participant_id, is_male, estimated_date, weight_kg, baby_first_name)
-      VALUES (${participantId}, ${isMale}, ${estimatedDate}, ${weightKg}, ${babyFirstName || null})
-      RETURNING *
-    `
-
-    // Insert avatar if provided
-    if (avatar) {
-      await sql`
-        INSERT INTO avatars (bet_id, top_layer, middle_layer, bottom_layer)
-        VALUES (${bet.id}, ${avatar.topLayer || null}, ${avatar.middleLayer || null}, ${avatar.bottomLayer || null})
-      `
-    }
+    // Insert bet with avatar in a transaction
+    const bet = await prisma.bet.create({
+      data: {
+        participantId,
+        isMale,
+        estimatedDate: new Date(estimatedDate),
+        weightKg,
+        babyFirstName: babyFirstName || null,
+        avatar: avatar ? {
+          create: {
+            topLayer: avatar.topLayer || null,
+            middleLayer: avatar.middleLayer || null,
+            bottomLayer: avatar.bottomLayer || null
+          }
+        } : undefined
+      }
+    })
 
     return bet
   } catch (error: any) {
-    if (error.code === '23505') {
+    // Prisma unique constraint violation
+    if (error.code === 'P2002') {
       throw createError({
         statusCode: 409,
         message: 'Vous avez déjà placé un pari'

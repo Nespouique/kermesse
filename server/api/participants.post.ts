@@ -1,4 +1,4 @@
-import { sql } from '../utils/db'
+import { prisma } from '../utils/prisma'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -14,14 +14,18 @@ export default defineEventHandler(async (event) => {
   const normalizedEmail = email.trim().toLowerCase()
 
   try {
-    const [participant] = await sql`
-      INSERT INTO participants (email, first_name, last_name)
-      VALUES (${normalizedEmail}, ${firstName}, ${lastName})
-      RETURNING id
-    `
+    const participant = await prisma.participant.create({
+      data: {
+        email: normalizedEmail,
+        firstName,
+        lastName
+      },
+      select: { id: true }
+    })
     return { id: participant.id }
   } catch (error: any) {
-    if (error.code === '23505') {
+    // Prisma unique constraint violation
+    if (error.code === 'P2002') {
       throw createError({
         statusCode: 409,
         message: 'Email déjà utilisé'
